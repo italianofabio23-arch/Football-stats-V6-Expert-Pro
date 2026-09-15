@@ -779,6 +779,7 @@ const LEAGUE_NAMES = {
   BL1: "Bundesliga",
   FL1: "Ligue 1",
   FL2: "Ligue 2",
+  NL1: "Eredivisie",
   NL2: "Eerste Divisie",
   PD2: "Segunda División",
   TR1: "Süper Lig",

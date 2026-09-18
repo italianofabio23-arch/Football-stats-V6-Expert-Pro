@@ -480,10 +480,7 @@ ${renderMarketBox(
   "🎯 Confidence Score",
   confidenceScore
 )}
-${renderMarketBox(
-  "🎯 Confidence Score",
-  confidenceScore
-)}
+
         ${renderMarketBox(
           mainLabel,
           mainProbability

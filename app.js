@@ -381,6 +381,63 @@ function calculateConfidenceScore(match, expertPrediction) {
     Math.min(100, Math.round(confidence))
   );
 }
+  // ========================================
+// V6 - FILTRO ANTI-FALSE TOP
+// ========================================
+function evaluateV6AntiFalse(expertPrediction, confidenceScore) {
+  const probability = clampPercent(
+    expertPrediction?.value
+  );
+
+  const confidence = clampPercent(
+    confidenceScore
+  );
+
+  const baseScore = Math.min(
+    probability,
+    confidence
+  );
+
+  if (
+    probability >= 80 &&
+    confidence >= 80
+  ) {
+    return {
+      status: "top",
+      score: baseScore,
+      label:
+        `🔥 TOP CONFERMATO • ` +
+        `P ${probability}% • C ${confidence}%`
+    };
+  }
+
+  if (
+    probability >= 80 ||
+    confidence >= 80
+  ) {
+    const missing =
+      probability < 80
+        ? `${80 - probability}% P`
+        : `${80 - confidence}% C`;
+
+    return {
+      status: "almost-top",
+      score: baseScore,
+      label:
+        `🟠 QUASI TOP • ` +
+        `P ${probability}% • C ${confidence}% • ` +
+        `Manca ${missing}`
+    };
+  }
+
+  return {
+    status: "not-top",
+    score: baseScore,
+    label:
+      `⚪ NON TOP • ` +
+      `P ${probability}% • C ${confidence}%`
+  };
+}
 function renderMatchCard(match) {
   const home = escapeHtml(match.home || "Casa");
   const away = escapeHtml(match.away || "Ospite");
@@ -393,6 +450,10 @@ function renderMatchCard(match) {
   const mainLabel = getStrategyLabel();
   const expertPrediction = getExpertPrediction(probabilities, match);
   const confidenceScore = calculateConfidenceScore(match, expertPrediction);
+  const v6AntiFalse = evaluateV6AntiFalse(
+  expertPrediction,
+  confidenceScore
+);
   return `
     <article class="match-card">
 
@@ -419,10 +480,25 @@ ${renderMarketBox(
   "🎯 Confidence Score",
   confidenceScore
 )}
+${renderMarketBox(
+  "🎯 Confidence Score",
+  confidenceScore
+)}
         ${renderMarketBox(
           mainLabel,
           mainProbability
         )}
+        <div class="market-box">
+  <span>🛡️ Anti-False V6</span>
+
+  <div class="market-value">
+    ${escapeHtml(v6AntiFalse.label)}
+  </div>
+
+  <small>
+    Score ${v6AntiFalse.score}/100
+  </small>
+</div>
 
       ${mainLabel !== "GG / BTTS"
   ? renderMarketBox("GG / BTTS", probabilities.btts)

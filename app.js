@@ -593,18 +593,39 @@ matches = await Promise.all(
   matches.map(renderMatchCard).join("");
     }
 function renderTop80Slip(matches) {
-  const picks = matches
-    .map((match) => ({
+const picks = matches
+  .map((match) => {
+    const prediction =
+      getExpertPrediction(match.probabilities, match);
+
+    const confidenceScore =
+      calculateConfidenceScore(match, prediction);
+
+    const antiFalse =
+      evaluateV6AntiFalse(
+        prediction,
+        confidenceScore
+      );
+
+    return {
       match,
-      prediction: getExpertPrediction(match.probabilities, match)
-    }))
-    .filter((item) => item.prediction.label.startsWith("🔥 TOP"))
-    .sort(
-      (a, b) =>
-        Number(b.prediction.value) -
+      prediction,
+      confidenceScore,
+      antiFalse
+    };
+  })
+  .filter(
+    (item) =>
+      item.antiFalse.status === "top"
+  )
+  .sort(
+    (a, b) =>
+      Number(b.antiFalse.score) -
+        Number(a.antiFalse.score) ||
+      Number(b.prediction.value) -
         Number(a.prediction.value)
-    )
-    .slice(0, 3);
+  )
+  .slice(0, 3);
 
   if (picks.length === 0) {
     return `
@@ -637,13 +658,15 @@ const combinedTop80Odds = picks.reduce(
       </div>
 
       <div class="market-grid">
-        ${picks.map(({ match, prediction }) => `
+        ${picks.map(({ match, prediction, antiFalse }) => `
           <div class="market-box">
             <span>
               ${escapeHtml(match.home)} -
               ${escapeHtml(match.away)}
               <br>
               ${escapeHtml(prediction.label)}
+              <br>
+🛡️ Score Anti-False ${antiFalse.score}/100
             </span>
 
             <div class="market-value">

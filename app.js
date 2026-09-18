@@ -505,15 +505,21 @@ ${mainLabel !== "Over 2.5"
   ? renderMarketBox("Over 2.5", probabilities.over25)
   : ""}
 
+<div class="stats-fixed-grid">
+
 ${renderXgBox("xG Casa", match.xg?.home)}
 ${renderXgBox("xG Ospite", match.xg?.away)}
+
 ${renderMarketBox("🏠 1 Casa", probabilities.homeWin)}
 ${renderMarketBox("🤝 X Pareggio", probabilities.draw)}
+
 ${renderMarketBox("✈️ 2 Ospite", probabilities.awayWin)}
 
 ${mainLabel !== "Under 2.5"
   ? renderMarketBox("Under 2.5", probabilities.under25)
-    : ""}
+  : ""}
+
+</div>
       </div>
 
     </article>

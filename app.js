@@ -507,17 +507,31 @@ ${mainLabel !== "Over 2.5"
 
 <div class="stats-fixed-grid">
 
-${renderXgBox("xG Casa", match.xg?.home)}
-${renderXgBox("xG Ospite", match.xg?.away)}
+  <div class="stat-xg-home">
+    ${renderXgBox("xG Casa", match.xg?.home)}
+  </div>
 
-${renderMarketBox("🏠 1 Casa", probabilities.homeWin)}
-${renderMarketBox("🤝 X Pareggio", probabilities.draw)}
+  <div class="stat-draw">
+    ${renderMarketBox("🤝 X Pareggio", probabilities.draw)}
+  </div>
 
-${renderMarketBox("✈️ 2 Ospite", probabilities.awayWin)}
+  <div class="stat-xg-away">
+    ${renderXgBox("xG Ospite", match.xg?.away)}
+  </div>
 
-${mainLabel !== "Under 2.5"
-  ? renderMarketBox("Under 2.5", probabilities.under25)
-  : ""}
+  <div class="stat-home">
+    ${renderMarketBox("🏠 1 Casa", probabilities.homeWin)}
+  </div>
+
+  <div class="stat-away">
+    ${renderMarketBox("✈️ 2 Ospite", probabilities.awayWin)}
+  </div>
+
+  ${mainLabel !== "Under 2.5"
+    ? `<div class="stat-under">
+        ${renderMarketBox("Under 2.5", probabilities.under25)}
+       </div>`
+    : ""}
 
 </div>
       </div>
@@ -1212,29 +1226,67 @@ async function fetchStandings(leagueId, season) {
 
       const data = await response.json();
 
-      const allStandings =
-        Array.isArray(data.standings)
-          ? data.standings
-          : [];
+let total = [];
+let home = [];
+let away = [];
 
-      const total =
-        allStandings.find((s) => s.type === "TOTAL")?.table ||
-        allStandings[0]?.table ||
-        [];
+// Formato già usato dalla V6
+const oldStandings =
+  Array.isArray(data.standings)
+    ? data.standings
+    : [];
 
-      const home =
-        allStandings.find((s) => s.type === "HOME")?.table ||
-        total;
+if (oldStandings.length) {
+  total =
+    oldStandings.find((s) => s.type === "TOTAL")?.table ||
+    oldStandings[0]?.table ||
+    [];
 
-      const away =
-        allStandings.find((s) => s.type === "AWAY")?.table ||
-        total;
+  home =
+    oldStandings.find((s) => s.type === "HOME")?.table ||
+    total;
 
-      const standings = {
-        total,
-        home,
-        away
+  away =
+    oldStandings.find((s) => s.type === "AWAY")?.table ||
+    total;
+}
+
+// Formato API-Football
+if (!total.length) {
+  const apiGroups =
+    data?.response?.[0]?.league?.standings;
+
+  const apiRows =
+    Array.isArray(apiGroups)
+      ? apiGroups.flat()
+      : [];
+
+  const convertRows = (mode) =>
+    apiRows.map((row) => {
+      const stats =
+        row?.[mode] ||
+        row?.all ||
+        {};
+
+      return {
+        team: row?.team,
+        playedGames: safeNumber(stats?.played),
+        goalsFor: safeNumber(stats?.goals?.for),
+        goalsAgainst: safeNumber(stats?.goals?.against),
+        form: row?.form || ""
       };
+    });
+
+  total = convertRows("all");
+  home = convertRows("home");
+  away = convertRows("away");
+}
+
+const standings = {
+  total,
+  home,
+  away
+};
 
       if (total.length) {
         standingsCache[key] = standings;

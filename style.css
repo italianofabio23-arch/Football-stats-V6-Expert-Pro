@@ -359,3 +359,63 @@ button {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+/* ==========================================
+   V6 - CASA / X / OSPITE
+   ========================================== */
+
+.stats-fixed-grid {
+  grid-column: 1 / -1;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 0.85fr 1fr;
+  grid-template-areas:
+    "xgh draw xga"
+    "home draw away"
+    "under under under";
+  gap: 9px;
+  margin-top: 9px;
+}
+
+.stat-xg-home {
+  grid-area: xgh;
+}
+
+.stat-draw {
+  grid-area: draw;
+}
+
+.stat-xg-away {
+  grid-area: xga;
+}
+
+.stat-home {
+  grid-area: home;
+}
+
+.stat-away {
+  grid-area: away;
+}
+
+.stat-under {
+  grid-area: under;
+}
+
+.stats-fixed-grid > div > .market-box {
+  height: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 700px) {
+  .stats-fixed-grid {
+    grid-template-columns: 1fr 0.85fr 1fr;
+    gap: 7px;
+  }
+
+  .stats-fixed-grid .market-box {
+    padding: 10px 8px;
+  }
+
+  .stats-fixed-grid .market-box span {
+    font-size: 11px;
+  }
+  }

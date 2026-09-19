@@ -596,9 +596,19 @@ async function renderMatches(matches) {
   }
 resultsInfo.textContent = "🧠 Analisi Expert V5 in corso...";
 
-matches = await Promise.all(
-  matches.map(enrichMatchWithExpertData)
-);
+const enrichedMatches = [];
+
+for (let i = 0; i < matches.length; i += 4) {
+  const batch = matches.slice(i, i + 4);
+
+  const batchResults = await Promise.all(
+    batch.map(enrichMatchWithExpertData)
+  );
+
+  enrichedMatches.push(...batchResults);
+}
+
+matches = enrichedMatches;
   matchesCount.textContent =
     `${matches.length} ${matches.length === 1 ? "partita" : "partite"}`;
 

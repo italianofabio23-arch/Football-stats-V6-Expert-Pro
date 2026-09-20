@@ -734,7 +734,397 @@ const combinedTop80Odds = picks.reduce(
     </article>
   `;
 }
+function teamOver05FromXg(xg) {
+  const lambda = Number(xg);
+
+  if (!Number.isFinite(lambda) || lambda <= 0) {
+    return 0;
+  }
+
+  return clampPercent(
+    (1 - Math.exp(-lambda)) * 100
+  );
+}
+
+function teamOver15FromXg(xg) {
+  const lambda = Number(xg);
+
+  if (!Number.isFinite(lambda) || lambda <= 0) {
+    return 0;
+  }
+
+  return clampPercent(
+    (
+      1 -
+      Math.exp(-lambda) * (1 + lambda)
+    ) * 100
+  );
+}
 function renderRiskyExpertSlip(matches) {
+  const candidates = matches
+    .map((match) => {
+      const p = match.probabilities || {};
+
+      const homeXg = Number(match.xg?.home);
+      const awayXg = Number(match.xg?.away);
+
+      if (
+        !Number.isFinite(homeXg) ||
+        !Number.isFinite(awayXg)
+      ) {
+        return null;
+      }
+
+      const options = [];
+
+      // =====================================
+      // CASA OVER 1.5 GOL
+      // solo con xG molto alto
+      // =====================================
+      if (homeXg >= 2.50) {
+        const probability =
+          teamOver15FromXg(homeXg);
+
+        const confidence =
+          calculateConfidenceScore(
+            match,
+            { value: probability }
+          );
+
+        if (
+          probability >= 70 &&
+          confidence >= 75
+        ) {
+          options.push({
+            label: "🏠 Casa Over 1.5 Gol",
+            value: probability,
+            confidence,
+            xg: homeXg,
+            priority: 5
+          });
+        }
+      }
+
+      // =====================================
+      // OSPITE OVER 1.5 GOL
+      // solo con xG molto alto
+      // =====================================
+      if (awayXg >= 2.50) {
+        const probability =
+          teamOver15FromXg(awayXg);
+
+        const confidence =
+          calculateConfidenceScore(
+            match,
+            { value: probability }
+          );
+
+        if (
+          probability >= 70 &&
+          confidence >= 75
+        ) {
+          options.push({
+            label: "✈️ Ospite Over 1.5 Gol",
+            value: probability,
+            confidence,
+            xg: awayXg,
+            priority: 5
+          });
+        }
+      }
+
+      // =====================================
+      // CASA SEGNA OVER 0.5
+      // =====================================
+      if (homeXg >= 1.60) {
+        const probability =
+          teamOver05FromXg(homeXg);
+
+        const confidence =
+          calculateConfidenceScore(
+            match,
+            { value: probability }
+          );
+
+        if (
+          probability >= 76 &&
+          confidence >= 75
+        ) {
+          options.push({
+            label: "🏠 Casa Over 0.5 Gol",
+            value: probability,
+            confidence,
+            xg: homeXg,
+            priority: 4
+          });
+        }
+      }
+
+      // =====================================
+      // OSPITE SEGNA OVER 0.5
+      // =====================================
+      if (awayXg >= 1.60) {
+        const probability =
+          teamOver05FromXg(awayXg);
+
+        const confidence =
+          calculateConfidenceScore(
+            match,
+            { value: probability }
+          );
+
+        if (
+          probability >= 76 &&
+          confidence >= 75
+        ) {
+          options.push({
+            label: "✈️ Ospite Over 0.5 Gol",
+            value: probability,
+            confidence,
+            xg: awayXg,
+            priority: 4
+          });
+        }
+      }
+
+      // =====================================
+      // OVER 2.5 PARTITA
+      // =====================================
+      const over25 = Number(p.over25);
+
+      if (Number.isFinite(over25)) {
+        const confidence =
+          calculateConfidenceScore(
+            match,
+            { value: over25 }
+          );
+
+        if (
+          over25 >= 72 &&
+          confidence >= 75
+        ) {
+          options.push({
+            label: "🔥 Over 2.5",
+            value: over25,
+            confidence,
+            xg: homeXg + awayXg,
+            priority: 3
+          });
+        }
+      }
+
+      // =====================================
+      // GG / BTTS
+      // =====================================
+      const btts = Number(p.btts);
+
+      if (Number.isFinite(btts)) {
+        const confidence =
+          calculateConfidenceScore(
+            match,
+            { value: btts }
+          );
+
+        if (
+          btts >= 70 &&
+          confidence >= 75
+        ) {
+          options.push({
+            label: "⚽ GG / BTTS",
+            value: btts,
+            confidence,
+            xg: homeXg + awayXg,
+            priority: 2
+          });
+        }
+      }
+
+      if (!options.length) {
+        return null;
+      }
+
+      // Preferisce:
+      // 1. mercati squadra con xG alto
+      // 2. maggiore confidence
+      // 3. maggiore probabilità
+      options.sort(
+        (a, b) =>
+          b.priority - a.priority ||
+          b.confidence - a.confidence ||
+          b.value - a.value
+      );
+
+      return {
+        match,
+        prediction: options[0]
+      };
+    })
+    .filter(Boolean)
+    .sort(
+      (a, b) =>
+        b.prediction.confidence -
+          a.prediction.confidence ||
+        b.prediction.priority -
+          a.prediction.priority ||
+        b.prediction.value -
+          a.prediction.value
+    );
+
+  // Massimo 7 partite
+  const picks = candidates.slice(0, 7);
+
+  if (picks.length === 0) {
+    return `
+      <article class="match-card">
+        <div class="teams">
+          🎯 SCHEDINA MODERATA V6 • GOAL & xG
+        </div>
+
+        <div class="market-box">
+          <span>
+            Nessuna selezione con requisiti sufficienti
+          </span>
+        </div>
+      </article>
+    `;
+  }
+
+  const combinedEstimatedOdds =
+    picks.reduce(
+      (total, { prediction }) => {
+        const probability =
+          Number(prediction.value);
+
+        if (
+          !Number.isFinite(probability) ||
+          probability <= 0
+        ) {
+          return total;
+        }
+
+        return total * (100 / probability);
+      },
+      1
+    );
+
+  return `
+    <article class="match-card">
+
+      <div class="teams">
+        🎯 SCHEDINA MODERATA V6 • GOAL & xG
+      </div>
+
+      <div class="market-box"
+           style="margin-bottom:14px;">
+        <span>
+          ${
+            picks.length >= 6
+              ? `✅ ${picks.length} selezioni trovate`
+              : `⚠️ Solo ${picks.length} selezioni superano i filtri`
+          }
+        </span>
+      </div>
+
+      <div class="market-grid">
+
+        ${picks.map(
+          ({ match, prediction }) => `
+          <div class="market-box">
+
+            <span>
+              ${escapeHtml(match.home)} -
+              ${escapeHtml(match.away)}
+              <br>
+
+              ${escapeHtml(prediction.label)}
+              <br>
+
+              ⚽ xG ${Number(prediction.xg).toFixed(2)}
+              <br>
+
+              🎯 Confidence Gol
+              ${prediction.confidence}%
+            </span>
+
+            <div class="market-value">
+
+              ${clampPercent(
+                prediction.value
+              )}%
+
+              <br>
+
+              <span style="font-size:0.75em">
+                Quota stimata
+                ${(
+                  100 /
+                  Number(prediction.value)
+                ).toFixed(2)}
+              </span>
+
+            </div>
+          </div>
+        `
+        ).join("")}
+
+      </div>
+
+      <div
+        class="market-box"
+        style="margin-top:16px;"
+      >
+        <span>
+          💰 Quota totale stimata
+        </span>
+
+        <div class="market-value">
+          ${combinedEstimatedOdds.toFixed(2)}
+        </div>
+      </div>
+
+      <div
+        class="market-box"
+        style="margin-top:12px;"
+      >
+
+        <span>💶 Puntata</span>
+
+        <input
+          type="number"
+          min="1"
+          step="1"
+          value="10"
+          style="width:100%;
+                 margin:10px 0;
+                 padding:10px;
+                 border-radius:8px;"
+          oninput="
+            this.nextElementSibling.textContent =
+            'Vincita potenziale €' +
+            (
+              (Number(this.value) || 0) *
+              ${Number(
+                combinedEstimatedOdds.toFixed(2)
+              )}
+            ).toFixed(2)
+          "
+        >
+
+        <div class="market-value">
+          Vincita potenziale €
+          ${(
+            10 *
+            Number(
+              combinedEstimatedOdds.toFixed(2)
+            )
+          ).toFixed(2)}
+        </div>
+
+      </div>
+
+    </article>
+  `;
+}
 let picks = matches
     .map((match) => {
       const p = match.probabilities || {};

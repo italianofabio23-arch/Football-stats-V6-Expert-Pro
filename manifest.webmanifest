@@ -1,0 +1,15 @@
+{
+  "name": "Football Stats V6 Expert Pro",
+  "short_name": "V6 Expert Pro",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#050914",
+  "theme_color": "#050914",
+  "icons": [
+    {
+      "src": "icon-v6.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -564,7 +564,88 @@ async function enrichMatchWithExpertData(match) {
         xgData.homeExpectedGoals,
         xgData.awayExpectedGoals
       );
+    // ======================================
+    // V6 - POSSIBILI MARCATORI
+    // ======================================
 
+    const homeTeamId =
+      Number(sourceGame?.teams?.home?.id);
+
+    const awayTeamId =
+      Number(sourceGame?.teams?.away?.id);
+
+    let scorerCandidates = {
+      home: [],
+      away: []
+    };
+
+    if (
+      Number.isFinite(homeTeamId) &&
+      Number.isFinite(awayTeamId)
+    ) {
+      const [
+        homeRecentFixtures,
+        awayRecentFixtures,
+        h2hFixtures
+      ] = await Promise.all([
+        fetchScorerRecentFixtures(
+          homeTeamId,
+          5
+        ),
+
+        fetchScorerRecentFixtures(
+          awayTeamId,
+          5
+        ),
+
+        fetchScorerHeadToHead(
+          homeTeamId,
+          awayTeamId,
+          5
+        )
+      ]);
+
+      const [
+        homeScorers,
+        awayScorers
+      ] = await Promise.all([
+        buildScorerCandidates(
+          homeTeamId,
+          homeRecentFixtures,
+          h2hFixtures,
+          xgData.homeExpectedGoals
+        ),
+
+        buildScorerCandidates(
+          awayTeamId,
+          awayRecentFixtures,
+          h2hFixtures,
+          xgData.awayExpectedGoals
+        )
+      ]);
+
+      scorerCandidates = {
+        home: homeScorers.map(
+          (player) => ({
+            ...player,
+            teamSide: "Casa",
+            teamName:
+              sourceGame?.teams?.home?.name ||
+              match.home
+          })
+        ),
+
+        away: awayScorers.map(
+          (player) => ({
+            ...player,
+            teamSide: "Ospite",
+            teamName:
+              sourceGame?.teams?.away?.name ||
+              match.away
+          })
+        )
+      };
+  }
     return {
       ...match,
 
@@ -575,6 +656,7 @@ async function enrichMatchWithExpertData(match) {
         away: xgData.awayExpectedGoals
       },
 
+scorerCandidates,
       expertData: xgData
     };
 

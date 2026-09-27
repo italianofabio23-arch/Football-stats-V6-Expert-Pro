@@ -1771,10 +1771,10 @@ console.log("🔎 DEBUG RECENT MARCATORI", {
           position.includes("GOALKEEP");
 
         return (
-          !isGoalkeeper &&
-          player.appearances >= 2 &&
-          player.minutes >= 90
-        );
+  !isGoalkeeper &&
+  player.appearances >= 1 &&
+  player.minutes >= 45
+);
       })
       .map((player) => {
         const avgMinutes =

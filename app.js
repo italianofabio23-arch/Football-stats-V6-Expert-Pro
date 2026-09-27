@@ -731,18 +731,21 @@ async function enrichMatchWithExpertData(match) {
         awayScorers
       ] = await Promise.all([
         buildScorerCandidates(
-          homeTeamId,
-          homeRecentFixtures,
-          h2hFixtures,
-          xgData.homeExpectedGoals
-        ),
+  homeTeamId,
+  homeRecentFixtures,
+  h2hFixtures,
+  xgData.homeExpectedGoals,
+  sourceGame?.league?.season
+),
 
-        buildScorerCandidates(
-          awayTeamId,
-          awayRecentFixtures,
-          h2hFixtures,
-          xgData.awayExpectedGoals
-        )
+      buildScorerCandidates(
+  awayTeamId,
+  awayRecentFixtures,
+  h2hFixtures,
+  xgData.awayExpectedGoals,
+  sourceGame?.league?.season
+)
+        
       ]);
 
       scorerCandidates = {
@@ -1599,10 +1602,12 @@ async function buildScorerCandidates(
   teamId,
   recentFixtures,
   h2hFixtures,
-  teamExpectedGoals
+  teamExpectedGoals,
+  season
 ) {
   const id = Number(teamId);
   const teamXg = Number(teamExpectedGoals);
+  const seasonYear = Number(season);
 
   if (
     !Number.isFinite(id) ||

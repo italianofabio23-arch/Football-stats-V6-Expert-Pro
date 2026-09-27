@@ -1312,6 +1312,433 @@ async function fetchScorerHeadToHead(
     return [];
   }
   }
+// ==========================================
+// V6 - MOTORE POSSIBILE MARCATORE
+// ==========================================
+
+// Estrae i dati offensivi dei giocatori
+// da una singola partita
+function extractScorerPlayerStats(playerData, teamId) {
+  const teams = Array.isArray(playerData)
+    ? playerData
+    : [];
+
+  const teamBlock = teams.find(
+    (item) =>
+      Number(item?.team?.id) === Number(teamId)
+  );
+
+  const players = Array.isArray(teamBlock?.players)
+    ? teamBlock.players
+    : [];
+
+  return players
+    .map((entry) => {
+      const stats =
+        Array.isArray(entry?.statistics)
+          ? entry.statistics[0] || {}
+          : {};
+
+      const playerId =
+        Number(entry?.player?.id);
+
+      if (!Number.isFinite(playerId)) {
+        return null;
+      }
+
+      return {
+        id: playerId,
+
+        name:
+          entry?.player?.name ||
+          "Giocatore",
+
+        position:
+          String(
+            stats?.games?.position || ""
+          ).toUpperCase(),
+
+        minutes:
+          safeNumber(
+            stats?.games?.minutes
+          ),
+
+        rating:
+          safeNumber(
+            stats?.games?.rating
+          ),
+
+        goals:
+          safeNumber(
+            stats?.goals?.total
+          ),
+
+        shots:
+          safeNumber(
+            stats?.shots?.total
+          ),
+
+        shotsOn:
+          safeNumber(
+            stats?.shots?.on
+          )
+      };
+    })
+    .filter(Boolean);
+}
+
+
+// ==========================================
+// COSTRUISCE I CANDIDATI MARCATORE
+// ==========================================
+
+async function buildScorerCandidates(
+  teamId,
+  recentFixtures,
+  h2hFixtures,
+  teamExpectedGoals
+) {
+  const id = Number(teamId);
+  const teamXg = Number(teamExpectedGoals);
+
+  if (
+    !Number.isFinite(id) ||
+    !Number.isFinite(teamXg) ||
+    teamXg <= 0
+  ) {
+    return [];
+  }
+
+  const recent = Array.isArray(recentFixtures)
+    ? recentFixtures.slice(0, 5)
+    : [];
+
+  if (!recent.length) {
+    return [];
+  }
+
+  const playerMap = new Map();
+
+  // ======================================
+  // ANALISI ULTIME 5 PARTITE
+  // ======================================
+
+  const recentResults = await Promise.all(
+    recent.map(async (fixture) => {
+      const fixtureId = Number(
+        fixture?.fixture?.id ??
+        fixture?.id
+      );
+
+      if (!Number.isFinite(fixtureId)) {
+        return [];
+      }
+
+      const playerData =
+        await fetchScorerFixturePlayers(
+          fixtureId
+        );
+
+      return extractScorerPlayerStats(
+        playerData,
+        id
+      );
+    })
+  );
+
+  recentResults
+    .flat()
+    .forEach((player) => {
+      if (!player?.id) return;
+
+      if (!playerMap.has(player.id)) {
+        playerMap.set(player.id, {
+          id: player.id,
+          name: player.name,
+          position: player.position,
+          appearances: 0,
+          minutes: 0,
+          goals: 0,
+          shots: 0,
+          shotsOn: 0,
+          ratingTotal: 0,
+          ratingCount: 0,
+          h2hGoals: 0
+        });
+      }
+
+      const current =
+        playerMap.get(player.id);
+
+      if (player.minutes > 0) {
+        current.appearances += 1;
+      }
+
+      current.minutes +=
+        safeNumber(player.minutes);
+
+      current.goals +=
+        safeNumber(player.goals);
+
+      current.shots +=
+        safeNumber(player.shots);
+
+      current.shotsOn +=
+        safeNumber(player.shotsOn);
+
+      if (player.rating > 0) {
+        current.ratingTotal +=
+          player.rating;
+
+        current.ratingCount += 1;
+      }
+
+      if (
+        !current.position &&
+        player.position
+      ) {
+        current.position =
+          player.position;
+      }
+    });
+
+
+  // ======================================
+  // ANALISI SCONTRI DIRETTI
+  // ======================================
+
+  const h2h = Array.isArray(h2hFixtures)
+    ? h2hFixtures.slice(0, 5)
+    : [];
+
+  const h2hResults = await Promise.all(
+    h2h.map(async (fixture) => {
+      const fixtureId = Number(
+        fixture?.fixture?.id ??
+        fixture?.id
+      );
+
+      if (!Number.isFinite(fixtureId)) {
+        return [];
+      }
+
+      const playerData =
+        await fetchScorerFixturePlayers(
+          fixtureId
+        );
+
+      return extractScorerPlayerStats(
+        playerData,
+        id
+      );
+    })
+  );
+
+  h2hResults
+    .flat()
+    .forEach((player) => {
+      const current =
+        playerMap.get(player.id);
+
+      if (!current) return;
+
+      current.h2hGoals +=
+        safeNumber(player.goals);
+    });
+
+
+  // ======================================
+  // FILTRO GIOCATORI UTILIZZABILI
+  // ======================================
+
+  const candidates =
+    Array.from(playerMap.values())
+      .filter((player) => {
+        const position =
+          String(player.position || "");
+
+        const isGoalkeeper =
+          position === "G" ||
+          position.includes("GK") ||
+          position.includes("GOALKEEP");
+
+        return (
+          !isGoalkeeper &&
+          player.appearances >= 2 &&
+          player.minutes >= 90
+        );
+      })
+      .map((player) => {
+        const avgMinutes =
+          player.appearances > 0
+            ? player.minutes /
+              player.appearances
+            : 0;
+
+        const avgRating =
+          player.ratingCount > 0
+            ? player.ratingTotal /
+              player.ratingCount
+            : 0;
+
+        let positionFactor = 0.90;
+
+        if (
+          player.position.includes("F") ||
+          player.position.includes("ATT")
+        ) {
+          positionFactor = 1.18;
+
+        } else if (
+          player.position.includes("M") ||
+          player.position.includes("MID")
+        ) {
+          positionFactor = 1.00;
+
+        } else if (
+          player.position.includes("D") ||
+          player.position.includes("DEF")
+        ) {
+          positionFactor = 0.58;
+        }
+
+        // Peso offensivo del giocatore
+        const rawWeight =
+          (
+            1 +
+            player.goals * 2.20 +
+            player.shotsOn * 0.70 +
+            player.shots * 0.18 +
+            Math.min(
+              1.2,
+              avgMinutes / 90
+            ) * 0.45 +
+            Math.max(
+              0,
+              avgRating - 6
+            ) * 0.25 +
+            player.h2hGoals * 0.70
+          ) *
+          positionFactor;
+
+        return {
+          ...player,
+          avgMinutes:
+            Math.round(avgMinutes),
+
+          avgRating:
+            Number(
+              avgRating.toFixed(2)
+            ),
+
+          rawWeight
+        };
+      });
+
+
+  if (!candidates.length) {
+    return [];
+  }
+
+
+  // ======================================
+  // DISTRIBUZIONE xG SQUADRA AI GIOCATORI
+  // ======================================
+
+  const totalWeight =
+    candidates.reduce(
+      (sum, player) =>
+        sum + player.rawWeight,
+      0
+    );
+
+  if (totalWeight <= 0) {
+    return [];
+  }
+
+
+  return candidates
+    .map((player) => {
+
+      const playerShare =
+        player.rawWeight /
+        totalWeight;
+
+      let playerExpectedGoals =
+        teamXg * playerShare;
+
+      // Bonus prudente H2H
+      const h2hBonus =
+        Math.min(
+          1.25,
+          1 +
+          player.h2hGoals * 0.08
+        );
+
+      playerExpectedGoals *=
+        h2hBonus;
+
+      // Poisson:
+      // probabilità almeno 1 gol
+      const probability =
+        (
+          1 -
+          Math.exp(
+            -playerExpectedGoals
+          )
+        ) * 100;
+
+      return {
+        id: player.id,
+        name: player.name,
+        position: player.position,
+
+        probability:
+          clampPercent(probability),
+
+        playerXg:
+          Number(
+            playerExpectedGoals.toFixed(2)
+          ),
+
+        recentGoals:
+          player.goals,
+
+        shots:
+          player.shots,
+
+        shotsOn:
+          player.shotsOn,
+
+        appearances:
+          player.appearances,
+
+        avgMinutes:
+          player.avgMinutes,
+
+        avgRating:
+          player.avgRating,
+
+        h2hGoals:
+          player.h2hGoals
+      };
+    })
+
+    // Evita percentuali troppo deboli
+    .filter(
+      (player) =>
+        player.probability >= 15
+    )
+
+    .sort(
+      (a, b) =>
+        b.probability -
+        a.probability
+    )
+
+    // Massimo 2 possibili marcatori
+    .slice(0, 2);
+                               }
 // Data YYYY-MM-DD senza problemi di fuso orario
 function formatApiDate(date) {
   const year = date.getFullYear();

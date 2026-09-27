@@ -1381,7 +1381,66 @@ SERIE_B: "Serie B",
 const scorerRecentFixturesCache = new Map();
 const scorerFixturePlayersCache = new Map();
 const scorerH2HCache = new Map();
+const scorerSeasonPlayersCache = new Map();
 
+// Giocatori + statistiche della stagione
+async function fetchScorerSeasonPlayers(teamId, season) {
+  const id = Number(teamId);
+  const year = Number(season);
+
+  if (
+    !Number.isFinite(id) ||
+    id <= 0 ||
+    !Number.isFinite(year) ||
+    year <= 0
+  ) {
+    return [];
+  }
+
+  const cacheKey = `${id}-${year}`;
+
+  if (scorerSeasonPlayersCache.has(cacheKey)) {
+    return scorerSeasonPlayersCache.get(cacheKey);
+  }
+
+  try {
+    const url =
+      `${BACKEND}/api/football?path=/players` +
+      `&team=${id}&season=${year}`;
+
+    const response = await fetch(url, {
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+
+    const players =
+      Array.isArray(data?.response)
+        ? data.response
+        : [];
+
+    scorerSeasonPlayersCache.set(
+      cacheKey,
+      players
+    );
+
+    return players;
+
+  } catch (error) {
+    console.warn(
+      "Errore giocatori stagione:",
+      id,
+      year,
+      error
+    );
+
+    return [];
+  }
+}
 // Ultime partite concluse di una squadra
 async function fetchScorerRecentFixtures(teamId, last = 5) {
   const id = Number(teamId);

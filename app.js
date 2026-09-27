@@ -1735,7 +1735,8 @@ const usableRecentPlayers =
 
 if (
   usableRecentPlayers.length < 2 &&
-  Number.isFinite(seasonYear)
+  Number.isFinite(seasonYear) &&
+  typeof fetchScorerSeasonPlayers === "function"
 ) {
   const seasonPlayers =
     await fetchScorerSeasonPlayers(

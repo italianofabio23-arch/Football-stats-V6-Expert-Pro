@@ -1621,9 +1621,7 @@ console.log("🔎 DEBUG RECENT MARCATORI", {
   recentUsate: recent,
   numeroPartite: recent.length
 });
-  if (!recent.length) {
-    return [];
-  }
+
 
   const playerMap = new Map();
 
@@ -1709,6 +1707,107 @@ console.log("🔎 DEBUG RECENT MARCATORI", {
           player.position;
       }
     });
+  // ======================================
+// FALLBACK DATI STAGIONALI GIOCATORI
+// ======================================
+
+const usableRecentPlayers =
+  Array.from(playerMap.values()).filter((player) => {
+    const position =
+      String(player.position || "").toUpperCase();
+
+    const isGoalkeeper =
+      position === "G" ||
+      position.includes("GK") ||
+      position.includes("GOALKEEP");
+
+    return (
+      !isGoalkeeper &&
+      player.appearances >= 1 &&
+      player.minutes >= 45
+    );
+  });
+
+if (
+  usableRecentPlayers.length < 2 &&
+  Number.isFinite(seasonYear)
+) {
+  const seasonPlayers =
+    await fetchScorerSeasonPlayers(
+      id,
+      seasonYear
+    );
+
+  seasonPlayers.forEach((entry) => {
+    const playerId =
+      Number(entry?.player?.id);
+
+    if (
+      !Number.isFinite(playerId) ||
+      playerMap.has(playerId)
+    ) {
+      return;
+    }
+
+    const statsList =
+      Array.isArray(entry?.statistics)
+        ? entry.statistics
+        : [];
+
+    const stats =
+      statsList.find(
+        (item) =>
+          Number(item?.team?.id) === id
+      ) ||
+      statsList[0] ||
+      {};
+
+    const appearances =
+      safeNumber(
+        stats?.games?.appearences ??
+        stats?.games?.appearances
+      );
+
+    const minutes =
+      safeNumber(stats?.games?.minutes);
+
+    const rating =
+      safeNumber(stats?.games?.rating);
+
+    playerMap.set(playerId, {
+      id: playerId,
+
+      name:
+        entry?.player?.name ||
+        "Giocatore",
+
+      position:
+        String(
+          stats?.games?.position || ""
+        ).toUpperCase(),
+
+      appearances,
+      minutes,
+
+      goals:
+        safeNumber(stats?.goals?.total),
+
+      shots:
+        safeNumber(stats?.shots?.total),
+
+      shotsOn:
+        safeNumber(stats?.shots?.on),
+
+      ratingTotal:
+        rating > 0 ? rating : 0,
+
+      ratingCount:
+        rating > 0 ? 1 : 0,
+
+      h2hGoals: 0
+    });
+  });
+}
 
 
   // ======================================

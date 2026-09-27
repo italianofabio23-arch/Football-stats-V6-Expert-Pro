@@ -438,6 +438,121 @@ function evaluateV6AntiFalse(expertPrediction, confidenceScore) {
       `P ${probability}% • C ${confidence}%`
   };
 }
+// ==========================================
+// V6 - BOX POSSIBILI MARCATORI
+// ==========================================
+
+function renderScorerCandidates(match) {
+  const homeCandidates =
+    Array.isArray(match?.scorerCandidates?.home)
+      ? match.scorerCandidates.home
+      : [];
+
+  const awayCandidates =
+    Array.isArray(match?.scorerCandidates?.away)
+      ? match.scorerCandidates.away
+      : [];
+
+  const candidates = [
+    ...homeCandidates,
+    ...awayCandidates
+  ]
+    .sort(
+      (a, b) =>
+        Number(b.probability) -
+        Number(a.probability)
+    )
+    .slice(0, 2);
+
+  if (!candidates.length) {
+    return `
+      <div
+        class="market-box"
+        style="grid-column: 1 / -1;"
+      >
+        <span>⚽ POSSIBILI MARCATORI</span>
+
+        <div class="market-value">
+          ⚠️ Dati giocatori insufficienti
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div
+      class="market-box"
+      style="grid-column: 1 / -1;"
+    >
+      <span>⚽ POSSIBILI MARCATORI V6</span>
+
+      ${candidates.map((player) => `
+        <div
+          style="
+            margin-top:12px;
+            padding-top:10px;
+            border-top:1px solid var(--border);
+          "
+        >
+          <div
+            style="
+              display:flex;
+              justify-content:space-between;
+              gap:10px;
+              align-items:center;
+            "
+          >
+            <strong>
+              ${escapeHtml(
+                player.name || "Giocatore"
+              )}
+            </strong>
+
+            <strong
+              class="market-value ${percentClass(
+                player.probability
+              )}"
+            >
+              ${clampPercent(
+                player.probability
+              )}%
+            </strong>
+          </div>
+
+          <small>
+            ${escapeHtml(
+              player.teamName || ""
+            )}
+            • ${escapeHtml(
+              player.teamSide || ""
+            )}
+            <br>
+
+            🔥 Gol ultime ${player.appearances || 0}:
+            ${Number(player.recentGoals) || 0}
+
+            • 🎯 Tiri:
+            ${Number(player.shots) || 0}
+
+            • Tiri in porta:
+            ${Number(player.shotsOn) || 0}
+
+            <br>
+
+            ⏱️ Media:
+            ${Number(player.avgMinutes) || 0} min
+
+            • 🤝 Gol H2H:
+            ${Number(player.h2hGoals) || 0}
+
+            • xG giocatore:
+            ${Number(player.playerXg || 0).toFixed(2)}
+          </small>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
 function renderMatchCard(match) {
   const home = escapeHtml(match.home || "Casa");
   const away = escapeHtml(match.away || "Ospite");
@@ -534,6 +649,7 @@ ${mainLabel !== "Over 2.5"
     : ""}
 
 </div>
+${renderScorerCandidates(match)}
       </div>
 
     </article>

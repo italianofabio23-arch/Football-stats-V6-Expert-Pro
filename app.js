@@ -1151,7 +1151,167 @@ SERIE_B: "Serie B",
   EL: "UEFA Europa League",
   CH: "Championship"
 };
+// ==========================================
+// V6 - DATI GIOCATORI / POSSIBILI MARCATORI
+// ==========================================
 
+const scorerRecentFixturesCache = new Map();
+const scorerFixturePlayersCache = new Map();
+const scorerH2HCache = new Map();
+
+// Ultime partite concluse di una squadra
+async function fetchScorerRecentFixtures(teamId, last = 5) {
+  const id = Number(teamId);
+  const limit = Math.max(1, Math.min(10, Number(last) || 5));
+
+  if (!Number.isFinite(id) || id <= 0) {
+    return [];
+  }
+
+  const cacheKey = `${id}-${limit}`;
+
+  if (scorerRecentFixturesCache.has(cacheKey)) {
+    return scorerRecentFixturesCache.get(cacheKey);
+  }
+
+  try {
+    const url =
+      `${BACKEND}/api/football?path=/fixtures` +
+      `&team=${id}&last=${limit}&status=FT`;
+
+    const response = await fetch(url, {
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+
+    const fixtures = Array.isArray(data.response)
+      ? data.response
+      : [];
+
+    scorerRecentFixturesCache.set(cacheKey, fixtures);
+
+    return fixtures;
+
+  } catch (error) {
+    console.warn(
+      "Errore ultime partite marcatore:",
+      id,
+      error
+    );
+
+    return [];
+  }
+}
+
+// Statistiche giocatori di una singola partita
+async function fetchScorerFixturePlayers(fixtureId) {
+  const id = Number(fixtureId);
+
+  if (!Number.isFinite(id) || id <= 0) {
+    return [];
+  }
+
+  if (scorerFixturePlayersCache.has(id)) {
+    return scorerFixturePlayersCache.get(id);
+  }
+
+  try {
+    const url =
+      `${BACKEND}/api/football?path=/fixtures/players` +
+      `&fixture=${id}`;
+
+    const response = await fetch(url, {
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+
+    const players = Array.isArray(data.response)
+      ? data.response
+      : [];
+
+    scorerFixturePlayersCache.set(id, players);
+
+    return players;
+
+  } catch (error) {
+    console.warn(
+      "Errore dati giocatori:",
+      id,
+      error
+    );
+
+    return [];
+  }
+}
+
+// Ultimi scontri diretti fra le due squadre
+async function fetchScorerHeadToHead(
+  homeTeamId,
+  awayTeamId,
+  last = 5
+) {
+  const homeId = Number(homeTeamId);
+  const awayId = Number(awayTeamId);
+
+  if (
+    !Number.isFinite(homeId) ||
+    !Number.isFinite(awayId)
+  ) {
+    return [];
+  }
+
+  const cacheKey =
+    `${homeId}-${awayId}-${last}`;
+
+  if (scorerH2HCache.has(cacheKey)) {
+    return scorerH2HCache.get(cacheKey);
+  }
+
+  try {
+    const url =
+      `${BACKEND}/api/football?path=/fixtures/headtohead` +
+      `&h2h=${homeId}-${awayId}` +
+      `&last=${last}`;
+
+    const response = await fetch(url, {
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+
+    const fixtures = Array.isArray(data.response)
+      ? data.response
+      : [];
+
+    scorerH2HCache.set(cacheKey, fixtures);
+
+    return fixtures;
+
+  } catch (error) {
+    console.warn(
+      "Errore H2H marcatori:",
+      homeId,
+      awayId,
+      error
+    );
+
+    return [];
+  }
+  }
 // Data YYYY-MM-DD senza problemi di fuso orario
 function formatApiDate(date) {
   const year = date.getFullYear();

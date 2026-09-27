@@ -685,91 +685,108 @@ async function enrichMatchWithExpertData(match) {
         xgData.homeExpectedGoals,
         xgData.awayExpectedGoals
       );
+    
     // ======================================
-    // V6 - POSSIBILI MARCATORI
-    // ======================================
+// V6 - POSSIBILI MARCATORI
+// ======================================
+// I marcatori non devono mai bloccare xG e probabilità.
 
-    const homeTeamId =
-      Number(sourceGame?.teams?.home?.id);
+const homeTeamId =
+  Number(sourceGame?.teams?.home?.id);
 
-    const awayTeamId =
-      Number(sourceGame?.teams?.away?.id);
+const awayTeamId =
+  Number(sourceGame?.teams?.away?.id);
 
-    let scorerCandidates = {
-      home: [],
-      away: []
-    };
+let scorerCandidates = {
+  home: [],
+  away: []
+};
 
-    if (
-      Number.isFinite(homeTeamId) &&
-      Number.isFinite(awayTeamId)
-    ) {
-      const [
+try {
+
+  if (
+    Number.isFinite(homeTeamId) &&
+    Number.isFinite(awayTeamId)
+  ) {
+
+    const [
+      homeRecentFixtures,
+      awayRecentFixtures,
+      h2hFixtures
+    ] = await Promise.all([
+      fetchScorerRecentFixtures(
+        homeTeamId,
+        2
+      ),
+
+      fetchScorerRecentFixtures(
+        awayTeamId,
+        2
+      ),
+
+      fetchScorerHeadToHead(
+        homeTeamId,
+        awayTeamId,
+        2
+      )
+    ]);
+
+    const [
+      homeScorers,
+      awayScorers
+    ] = await Promise.all([
+      buildScorerCandidates(
+        homeTeamId,
         homeRecentFixtures,
-        awayRecentFixtures,
-        h2hFixtures
-      ] = await Promise.all([
-        fetchScorerRecentFixtures(
-          homeTeamId,
-          5
-        ),
-
-        fetchScorerRecentFixtures(
-          awayTeamId,
-          5
-        ),
-
-        fetchScorerHeadToHead(
-          homeTeamId,
-          awayTeamId,
-          5
-        )
-      ]);
-
-      const [
-        homeScorers,
-        awayScorers
-      ] = await Promise.all([
-        buildScorerCandidates(
-  homeTeamId,
-  homeRecentFixtures,
-  h2hFixtures,
-  xgData.homeExpectedGoals,
-  sourceGame?.league?.season
-),
+        h2hFixtures,
+        xgData.homeExpectedGoals,
+        sourceGame?.league?.season
+      ),
 
       buildScorerCandidates(
-  awayTeamId,
-  awayRecentFixtures,
-  h2hFixtures,
-  xgData.awayExpectedGoals,
-  sourceGame?.league?.season
-)
-        
-      ]);
+        awayTeamId,
+        awayRecentFixtures,
+        h2hFixtures,
+        xgData.awayExpectedGoals,
+        sourceGame?.league?.season
+      )
+    ]);
 
-      scorerCandidates = {
-        home: homeScorers.map(
-          (player) => ({
-            ...player,
-            teamSide: "Casa",
-            teamName:
-              sourceGame?.teams?.home?.name ||
-              match.home
-          })
-        ),
+    scorerCandidates = {
+      home: homeScorers.map(
+        (player) => ({
+          ...player,
+          teamSide: "Casa",
+          teamName:
+            sourceGame?.teams?.home?.name ||
+            match.home
+        })
+      ),
 
-        away: awayScorers.map(
-          (player) => ({
-            ...player,
-            teamSide: "Ospite",
-            teamName:
-              sourceGame?.teams?.away?.name ||
-              match.away
-          })
-        )
-      };
+      away: awayScorers.map(
+        (player) => ({
+          ...player,
+          teamSide: "Ospite",
+          teamName:
+            sourceGame?.teams?.away?.name ||
+            match.away
+        })
+      )
+    };
   }
+
+} catch (scorerError) {
+
+  console.warn(
+    "Errore marcatori V6 isolato:",
+    scorerError
+  );
+
+  scorerCandidates = {
+    home: [],
+    away: []
+  };
+}
     return {
       ...match,
 

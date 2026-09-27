@@ -452,7 +452,12 @@ function renderScorerCandidates(match) {
     Array.isArray(match?.scorerCandidates?.away)
       ? match.scorerCandidates.away
       : [];
-
+console.log("🔎 DEBUG MARCATORI", {
+  partita: `${match.home} - ${match.away}`,
+  scorerCandidates: match.scorerCandidates,
+  casa: homeCandidates.length,
+  ospite: awayCandidates.length
+});
   const candidates = [
     ...homeCandidates,
     ...awayCandidates
@@ -1610,7 +1615,12 @@ async function buildScorerCandidates(
   const recent = Array.isArray(recentFixtures)
     ? recentFixtures.slice(0, 5)
     : [];
-
+console.log("🔎 DEBUG RECENT MARCATORI", {
+  teamId: id,
+  recentFixturesRicevute: recentFixtures,
+  recentUsate: recent,
+  numeroPartite: recent.length
+});
   if (!recent.length) {
     return [];
   }

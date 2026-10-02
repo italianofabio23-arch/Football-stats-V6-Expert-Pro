@@ -1370,6 +1370,10 @@ const LEAGUE_NAMES = {
   PT1: "Primeira Liga",
 SC1: "Premiership",
 SERIE_B: "Serie B",
+  
+BSA: "Brasileirão Serie A",
+BSB: "Brasileirão Serie B",
+  
   CL: "UEFA Champions League",
   EL: "UEFA Europa League",
   CH: "Championship"

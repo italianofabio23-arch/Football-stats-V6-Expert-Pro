@@ -2197,24 +2197,45 @@ async function fetchAllFixtures() {
 }
 
 // Filtra solo i campionati scelti
-function filterSelectedLeagues(games) {
-  const selected = getSelectedLeagueNames();
 
-  if (!selected.length) {
-    return [];
-  }
+function filterSelectedLeagues(games) {
+  const selected = getSelectedLeagues();
 
   return games.filter((game) => {
-    const leagueName = String(
-  game.competition?.name ||
-  game.league?.name ||
-  game.league ||
-  ""
-).trim();
+    const league = game.league || {};
+    const name = String(
+      league.name || game.competition?.name || ""
+    ).toLowerCase();
 
-    return selected.includes(leagueName);
+    const country = String(
+      league.country || game.competition?.area?.name || ""
+    ).toLowerCase();
+
+    return selected.some((code) => {
+      if (code === "BSA") {
+        return country === "brazil" &&
+          name.includes("serie a");
+      }
+
+      if (code === "BSB") {
+        return country === "brazil" &&
+          name.includes("serie b");
+      }
+
+      const expected = LEAGUE_NAMES[code];
+      if (!expected) return false;
+
+      // Evita di confondere Brasile e Italia.
+      if (code === "SA" || code === "SERIE_B") {
+        return country === "italy" &&
+          name === expected.toLowerCase();
+      }
+
+      return name === expected.toLowerCase();
+    });
   });
-    }
+}
+
 // ==========================================
 // BLOCCO 4B - Normalizzazione dati partite
 // ==========================================

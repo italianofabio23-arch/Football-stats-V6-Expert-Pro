@@ -835,11 +835,13 @@ try {
       awayMotivation: xgData.awayMotivation,
 
       upsetRisk: calculateUpsetRisk(
-        xgData.homeMotivation,
-        xgData.awayMotivation,
-        probabilities.homeWin,
-        probabilities.awayWin
-      ),
+  xgData.homeMotivation,
+  xgData.awayMotivation,
+  probabilities.homeWin,
+  probabilities.awayWin,
+  xgData.homePoints ?? null,
+  xgData.awayPoints ?? null
+),
 
       expertData: xgData
     };

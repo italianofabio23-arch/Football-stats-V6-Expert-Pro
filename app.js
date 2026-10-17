@@ -2514,13 +2514,17 @@ if (!total.length) {
         row?.all ||
         {};
 
-      return {
-        team: row?.team,
-        playedGames: safeNumber(stats?.played),
-        goalsFor: safeNumber(stats?.goals?.for),
-        goalsAgainst: safeNumber(stats?.goals?.against),
-        form: row?.form || ""
-      };
+  return {
+  team: row?.team,
+  rank: safeNumber(row?.rank),
+  points: safeNumber(row?.points),
+  goalDifference: safeNumber(row?.goalsDiff),
+  description: row?.description || "",
+  playedGames: safeNumber(stats?.played),
+  goalsFor: safeNumber(stats?.goals?.for),
+  goalsAgainst: safeNumber(stats?.goals?.against),
+  form: row?.form || ""
+};
     });
 
   total = convertRows("all");

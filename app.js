@@ -590,7 +590,39 @@ function renderMatchCard(match) {
       <div class="teams">
         ⚽ ${home} - ${away}
       </div>
+${match.upsetRisk?.score != null ? `
+  <div class="market-box">
+    <strong>🧠 MOTIVAZIONE E RISCHIO SORPRESA</strong>
 
+    <p>
+      🏠 ${home}:
+      ${escapeHtml(match.homeMotivation?.reason || "N/D")}
+      (${match.homeMotivation?.score ?? "N/D"}/100)
+    </p>
+
+    <p>
+      ✈️ ${away}:
+      ${escapeHtml(match.awayMotivation?.reason || "N/D")}
+      (${match.awayMotivation?.score ?? "N/D"}/100)
+    </p>
+
+    <p>
+      ⚠️ Rischio sorpresa:
+      <strong>
+        ${escapeHtml(match.upsetRisk.level)}
+        (${match.upsetRisk.score}/100)
+      </strong>
+    </p>
+
+    <small>
+      ${escapeHtml(match.upsetRisk.reason)}
+    </small>
+  </div>
+` : `
+  <div class="market-box">
+    🧠 Analisi motivazionale: dati insufficienti
+  </div>
+`}
       <div class="market-grid">
 ${renderMarketBox(
   `🔥 Pronostico Expert: ${expertPrediction.label}`,

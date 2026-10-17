@@ -2644,6 +2644,74 @@ function calculateMotivationScore(teamRow, table) {
     reason: "Pressione di classifica moderata"
   };
 }
+// V6 EXPERT - RISCHIO SORPRESA
+function calculateUpsetRisk(
+  homeMotivation,
+  awayMotivation,
+  homeWinProbability,
+  awayWinProbability
+) {
+  const home = Number(homeMotivation?.score);
+  const away = Number(awayMotivation?.score);
+
+  if (
+    homeMotivation?.score == null ||
+    awayMotivation?.score == null
+  ) {
+    return {
+      score: null,
+      level: "DATI INSUFFICIENTI",
+      reason: "Motivazioni non disponibili"
+    };
+  }
+
+  const homeWin = Number(homeWinProbability);
+  const awayWin = Number(awayWinProbability);
+
+  if (
+    !Number.isFinite(homeWin) ||
+    !Number.isFinite(awayWin)
+  ) {
+    return {
+      score: null,
+      level: "DATI INSUFFICIENTI",
+      reason: "Probabilita non disponibili"
+    };
+  }
+
+  const favoriteIsHome = homeWin >= awayWin;
+  const favoriteMotivation = favoriteIsHome ? home : away;
+  const underdogMotivation = favoriteIsHome ? away : home;
+
+  const motivationGap =
+    underdogMotivation - favoriteMotivation;
+
+  const favoriteProbability =
+    Math.max(homeWin, awayWin);
+
+  const risk = Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(
+        35 +
+        motivationGap * 0.5 +
+        (70 - favoriteProbability) * 0.4
+      )
+    )
+  );
+
+  return {
+    score: risk,
+    level:
+      risk >= 70 ? "ALTO" :
+      risk >= 45 ? "MEDIO" : "BASSO",
+    reason:
+      motivationGap > 0
+        ? "La sfavorita presenta maggiore pressione di classifica"
+        : "Nessuno svantaggio motivazionale rilevato per la favorita"
+  };
+}
 // Media corretta con smoothing
 function smoothGoalRate(
   value,

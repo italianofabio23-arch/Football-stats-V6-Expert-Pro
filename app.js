@@ -3086,6 +3086,9 @@ return {
   homePlayed,
   awayPlayed,
 
+homePoints: homeTotalRow?.points ?? null,
+awayPoints: awayTotalRow?.points ?? null,
+  
   homeMotivation: calculateMotivationScore(
     homeTotalRow,
     totalStandings

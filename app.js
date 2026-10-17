@@ -2547,18 +2547,20 @@ if (oldStandings.length) {
       form: row.form || ""
     }));
 
-  const totalRows =
-    oldStandings.find(s => s.type === "TOTAL")?.table ||
-    oldStandings[0]?.table ||
-    [];
+  
+const totalRows =
+  oldStandings.find(s => s.type === "TOTAL")?.table ||
+  oldStandings[0]?.table ||
+  [];
 
-  const homeRows =
-    oldStandings.find(s => s.type === "HOME")?.table ||
-    totalRows;
+const homeRows =
+  oldStandings.find(s => s.type === "HOME")?.table ||
+  totalRows;
 
-  const awayRows =
-    oldStandings.find(s => s.type === "AWAY")?.table ||
-    totalRows;
+const awayRows =
+  oldStandings.find(s => s.type === "AWAY")?.table ||
+  totalRows;
+  
 
   total = convertOldRows(totalRows);
   home = convertOldRows(homeRows);

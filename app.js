@@ -2580,7 +2580,70 @@ function calculateFormScore(form) {
   return points / (results.length * 3);
 }
 
+// V6 EXPERT - PRESSIONE DI CLASSIFICA
+function calculateMotivationScore(teamRow, table) {
+  if (!teamRow || !Array.isArray(table) || table.length < 4) {
+    return {
+      score: null,
+      reason: "Classifica non disponibile"
+    };
+  }
 
+  const sorted = [...table]
+    .filter(t => Number(t.rank) > 0)
+    .sort((a, b) => a.rank - b.rank);
+
+  const rank = Number(teamRow.rank);
+  const points = Number(teamRow.points);
+
+  if (!rank || !Number.isFinite(points) || sorted.length < 4) {
+    return {
+      score: null,
+      reason: "Dati insufficienti"
+    };
+  }
+
+  const totalTeams = sorted.length;
+  const relegationPlaces = totalTeams >= 18 ? 3 : 2;
+  const dangerRank = totalTeams - relegationPlaces + 1;
+
+  const dangerTeam = sorted.find(t => t.rank === dangerRank);
+  const fourthTeam = sorted.find(t => t.rank === 4);
+
+  const relegationGap = dangerTeam
+    ? Math.abs(points - Number(dangerTeam.points))
+    : 99;
+
+  const europeGap = fourthTeam
+    ? Math.abs(points - Number(fourthTeam.points))
+    : 99;
+
+  if (rank >= dangerRank || relegationGap <= 3) {
+    return {
+      score: 90,
+      reason: "Forte pressione per la salvezza"
+    };
+  }
+
+  if (rank <= 4 || europeGap <= 3) {
+    return {
+      score: 80,
+      reason: "Lotta per le prime posizioni"
+    };
+  }
+
+  if (relegationGap <= 6 || europeGap <= 6) {
+    return {
+      score: 65,
+      reason: "Obiettivi di classifica ancora vicini"
+    };
+  }
+
+  return {
+    score: 40,
+    reason: "Pressione di classifica moderata"
+  };
+}
 // Media corretta con smoothing
 function smoothGoalRate(
   value,

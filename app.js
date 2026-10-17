@@ -2719,7 +2719,9 @@ function calculateUpsetRisk(
   homeMotivation,
   awayMotivation,
   homeWinProbability,
-  awayWinProbability
+  awayWinProbability,
+  homePoints = null,
+  awayPoints = null
 ) {
   const home = Number(homeMotivation?.score);
   const away = Number(awayMotivation?.score);
@@ -2756,6 +2758,18 @@ function calculateUpsetRisk(
   const motivationGap =
     underdogMotivation - favoriteMotivation;
 
+const validPoints =
+  homePoints != null &&
+  awayPoints != null &&
+  Number.isFinite(Number(homePoints)) &&
+  Number.isFinite(Number(awayPoints));
+
+const pointsGap = validPoints
+  ? favoriteIsHome
+    ? Number(homePoints) - Number(awayPoints)
+    : Number(awayPoints) - Number(homePoints)
+  : 0;
+    
   const favoriteProbability =
     Math.max(homeWin, awayWin);
 
@@ -2766,7 +2780,10 @@ function calculateUpsetRisk(
       Math.round(
         35 +
         motivationGap * 0.5 +
-        (70 - favoriteProbability) * 0.4
+        
+(70 - favoriteProbability) * 0.4 -
+(validPoints ? Math.max(-20, Math.min(20, pointsGap * 0.3)) : 0)
+        
       )
     )
   );

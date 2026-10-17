@@ -2526,18 +2526,43 @@ const oldStandings =
     : [];
 
 if (oldStandings.length) {
-  total =
-    oldStandings.find((s) => s.type === "TOTAL")?.table ||
+  const convertOldRows = (rows) =>
+    rows.map((row) => ({
+      team: row.team,
+      rank: Number(row.rank ?? row.position ?? 0),
+      points: Number(row.points ?? 0),
+      goalDifference: Number(
+        row.goalDifference ?? row.goalsDiff ?? 0
+      ),
+      description: row.description || "",
+      playedGames: Number(
+        row.playedGames ?? row.all?.played ?? 0
+      ),
+      goalsFor: Number(
+        row.goalsFor ?? row.all?.goals?.for ?? 0
+      ),
+      goalsAgainst: Number(
+        row.goalsAgainst ?? row.all?.goals?.against ?? 0
+      ),
+      form: row.form || ""
+    }));
+
+  const totalRows =
+    oldStandings.find(s => s.type === "TOTAL")?.table ||
     oldStandings[0]?.table ||
     [];
 
-  home =
-    oldStandings.find((s) => s.type === "HOME")?.table ||
-    total;
+  const homeRows =
+    oldStandings.find(s => s.type === "HOME")?.table ||
+    totalRows;
 
-  away =
-    oldStandings.find((s) => s.type === "AWAY")?.table ||
-    total;
+  const awayRows =
+    oldStandings.find(s => s.type === "AWAY")?.table ||
+    totalRows;
+
+  total = convertOldRows(totalRows);
+  home = convertOldRows(homeRows);
+  away = convertOldRows(awayRows);
 }
 
 // Formato API-Football

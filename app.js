@@ -3050,7 +3050,4 @@ return {
     totalStandings
   )
 };
-  homePlayed,
-  awayPlayed
-};
 }

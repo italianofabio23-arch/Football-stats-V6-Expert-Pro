@@ -594,6 +594,18 @@ ${match.upsetRisk?.score != null ? `
   <div class="market-box">
     <strong>🧠 MOTIVAZIONE E RISCHIO SORPRESA</strong>
 
+<p>
+  📊 Punti in classifica:
+  ${home}: ${match.homePoints ?? "N/D"} |
+  ${away}: ${match.awayPoints ?? "N/D"}
+</p>
+<p>
+  📈 Differenza punti:
+  ${match.homePoints != null && match.awayPoints != null
+    ? Math.abs(Number(match.homePoints) - Number(match.awayPoints))
+    : "N/D"}
+</p>
+
     <p>
       🏠 ${home}:
       ${escapeHtml(match.homeMotivation?.reason || "N/D")}
@@ -834,6 +846,9 @@ try {
       homeMotivation: xgData.homeMotivation,
       awayMotivation: xgData.awayMotivation,
 
+homePoints: xgData.homePoints ?? null,
+awayPoints: xgData.awayPoints ?? null,
+      
       upsetRisk: calculateUpsetRisk(
   xgData.homeMotivation,
   xgData.awayMotivation,

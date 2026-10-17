@@ -2988,13 +2988,25 @@ const leagueAverage =
       Math.min(4.5, awayExpectedGoals)
     );
 
-
-  return {
+return {
   homeExpectedGoals,
   awayExpectedGoals,
   homeForm,
   awayForm,
   leagueAverage,
+  homePlayed,
+  awayPlayed,
+
+  homeMotivation: calculateMotivationScore(
+    homeTotalRow,
+    totalStandings
+  ),
+
+  awayMotivation: calculateMotivationScore(
+    awayTotalRow,
+    totalStandings
+  )
+};
   homePlayed,
   awayPlayed
 };

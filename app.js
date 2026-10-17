@@ -797,7 +797,18 @@ try {
         away: xgData.awayExpectedGoals
       },
 
-scorerCandidates,
+      scorerCandidates,
+
+      homeMotivation: xgData.homeMotivation,
+      awayMotivation: xgData.awayMotivation,
+
+      upsetRisk: calculateUpsetRisk(
+        xgData.homeMotivation,
+        xgData.awayMotivation,
+        probabilities.homeWin,
+        probabilities.awayWin
+      ),
+
       expertData: xgData
     };
 

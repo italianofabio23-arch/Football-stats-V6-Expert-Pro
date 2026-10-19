@@ -1125,6 +1125,27 @@ function renderRiskyExpertSlip(matches) {
 
       const options = [];
 
+const comboMarkets =
+  calculateV6ComboProbabilities(homeXg, awayXg);
+
+if (comboMarkets) {
+  Object.entries(comboMarkets).forEach(([label, probability]) => {
+    const confidence = calculateConfidenceScore(
+      match, { value: probability }
+    );
+
+    if (probability >= 53 && confidence >= 65) {
+      options.push({
+        label: "🎯 " + label,
+        value: probability,
+        confidence,
+        xg: homeXg + awayXg,
+        priority: label.includes("+") ? 7 : 6
+      });
+    }
+  });
+}
+      
       // =====================================
       // CASA OVER 1.5 GOL
       // solo con xG molto alto

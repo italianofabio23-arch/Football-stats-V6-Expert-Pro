@@ -1406,7 +1406,9 @@ if (comboMarkets) {
     <article class="match-card">
 
       <div class="teams">
-        🎯 SCHEDINA MODERATA V6 • GOAL & xG
+        
+🔥 COMBO EXPERT V6 • 5/6 PARTITE
+
       </div>
 
       <div class="market-box"

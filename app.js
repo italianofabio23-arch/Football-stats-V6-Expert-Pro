@@ -1111,6 +1111,29 @@ function calculateV6ComboProbabilities(homeXg, awayXg) {
 function renderRiskyExpertSlip(matches) {
   const candidates = matches
     .map((match) => {
+      
+const source = match.raw || match;
+
+const kickoff = Date.parse(
+  source?.fixture?.date ||
+  source?.utcDate ||
+  match.date ||
+  ""
+);
+
+const status = String(
+  source?.fixture?.status?.short ||
+  (typeof match.status === "string" ? match.status : "")
+).toUpperCase();
+
+if (
+  !Number.isFinite(kickoff) ||
+  kickoff <= Date.now() ||
+  !["NS", "SCHEDULED", "TIMED"].includes(status)
+) {
+  return null;
+}
+      
       const p = match.probabilities || {};
 
       const homeXg = Number(match.xg?.home);

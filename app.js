@@ -1362,24 +1362,27 @@ if (comboMarkets) {
           a.prediction.value
     );
 
-  // Massimo 7 partite
-  const picks = candidates.slice(0, 7);
+  
+  // Combo V6: minimo 5, massimo 6 incontri
+  const picks = candidates.slice(0, 6);
 
-  if (picks.length === 0) {
+  if (picks.length < 5) {
     return `
       <article class="match-card">
         <div class="teams">
-          🎯 SCHEDINA MODERATA V6 • GOAL & xG
+          🔥 COMBO EXPERT V6 • 5/6 PARTITE
         </div>
 
         <div class="market-box">
           <span>
-            Nessuna selezione con requisiti sufficienti
+            Solo ${picks.length}/5 partite idonee.
+            Servono almeno 5 incontri con dati sufficienti.
           </span>
         </div>
       </article>
     `;
   }
+  
 
   const combinedEstimatedOdds =
     picks.reduce(

@@ -1366,12 +1366,24 @@ options.push(...comboOptions);
       // 1. mercati squadra con xG alto
       // 2. maggiore confidence
       // 3. maggiore probabilità
-      options.sort(
-        (a, b) =>
-          b.priority - a.priority ||
-          b.confidence - a.confidence ||
-          b.value - a.value
-      );
+      options.sort((a, b) => {
+  const bonus = (option) => {
+    const label = option.label || "";
+    if (label.includes("GG + Over 2.5")) return 5;
+    if (label.includes("1 + Over 2.5")) return 4;
+    if (label.includes("2 + Over 1.5")) return 4;
+    if (label.includes("X2 + Over 2.5")) return 3;
+    if (label.includes("1X + Over 2.5")) return 3;
+    if (label.includes("X2 + GG")) return 3;
+    return 0;
+  };
+
+  return (
+    (b.priority + bonus(b)) - (a.priority + bonus(a)) ||
+    b.confidence - a.confidence ||
+    b.value - a.value
+  );
+});
 
       return {
         match,

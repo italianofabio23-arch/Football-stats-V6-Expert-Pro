@@ -1391,7 +1391,23 @@ options.push(...comboOptions);
 
   
   // Combo V6: minimo 5, massimo 6 incontri
-  const picks = candidates.slice(0, 6);
+  const picks = [];
+const marketCounts = {};
+
+for (const candidate of candidates) {
+  const market = candidate.prediction.label;
+
+  if ((marketCounts[market] || 0) >= 2) {
+    continue;
+  }
+
+  picks.push(candidate);
+  marketCounts[market] = (marketCounts[market] || 0) + 1;
+
+  if (picks.length === 6) {
+    break;
+  }
+}
 
   if (picks.length < 5) {
     return `

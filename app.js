@@ -1058,15 +1058,20 @@ function calculateV6ComboProbabilities(homeXg, awayXg) {
   const homeLambda = Math.max(0.05, Math.min(6, h));
   const awayLambda = Math.max(0.05, Math.min(6, a));
 
-  const markets = {
-    "1X + Over 1.5": 0,
-    "X2 + Over 1.5": 0,
-    "1X + Over 2.5": 0,
-    "X2 + Over 2.5": 0,
-    "GG": 0,
-    "GG + Over 2.5": 0,
-    "12 + Over 2.5": 0
-  };
+  
+const markets = {
+  "1X + Over 1.5": 0,
+  "X2 + Over 1.5": 0,
+  "1X + Over 2.5": 0,
+  "X2 + Over 2.5": 0,
+  "GG": 0,
+  "GG + Over 2.5": 0,
+  "12 + Over 2.5": 0,
+  "1 + Over 2.5": 0,
+  "2 + Over 1.5": 0,
+  "X2 + GG": 0
+};
+  
 
   for (let homeGoals = 0; homeGoals <= 25; homeGoals++) {
     const homeP = poissonProbability(homeGoals, homeLambda);
@@ -1098,6 +1103,19 @@ function calculateV6ComboProbabilities(homeXg, awayXg) {
       if (homeGoals !== awayGoals && total >= 3) {
         markets["12 + Over 2.5"] += p;
       }
+      
+if (homeGoals > awayGoals && total >= 3) {
+  markets["1 + Over 2.5"] += p;
+}
+
+if (awayGoals > homeGoals && total >= 2) {
+  markets["2 + Over 1.5"] += p;
+}
+
+if (awayGoals >= homeGoals && bothScore) {
+  markets["X2 + GG"] += p;
+}
+      
     }
   }
 

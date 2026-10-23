@@ -1331,6 +1331,15 @@ if (comboMarkets) {
         }
       }
 
+const comboOptions = options.filter(
+  option => option.label.includes("+")
+);
+
+      
+options.length = 0;
+options.push(...comboOptions);
+      
+      
       if (!options.length) {
         return null;
       }

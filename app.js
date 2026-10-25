@@ -1125,7 +1125,71 @@ if (awayGoals >= homeGoals && bothScore) {
 
   return markets;
 }
+// ========================================
+// AGENTE IA V6 PRO - AUTOMATICO E MANUALE
+// ========================================
 
+const AI_AGENT_MODES = {
+  AUTOMATIC: "automatic",
+  MANUAL: "manual"
+};
+
+let aiAgentMode = AI_AGENT_MODES.AUTOMATIC;
+
+const AI_AGENT_BET_TYPES = {
+  SINGLE: "single",
+  DOUBLE: "double"
+};
+
+let aiAgentBetType = AI_AGENT_BET_TYPES.SINGLE;
+
+function calculateAiAgentScore(prediction) {
+  const probability = Number(prediction.value);
+  const confidence = Number(prediction.confidence);
+  const xg = Number(prediction.xg);
+
+  if (
+    !Number.isFinite(probability) ||
+    !Number.isFinite(confidence)
+  ) {
+    return 0;
+  }
+
+  const probabilityScore = probability * 0.45;
+  const confidenceScore = confidence * 0.35;
+  const xgScore = Number.isFinite(xg)
+    ? Math.min(Math.max(xg, 0) / 4, 1) * 20
+    : 0;
+
+  return Math.round(
+    probabilityScore + confidenceScore + xgScore
+  );
+}
+
+function selectAiAgentPicks(candidates) {
+  if (!Array.isArray(candidates)) return [];
+
+  const ranked = candidates
+    .filter(item =>
+      item &&
+      item.match &&
+      item.prediction &&
+      Number(item.prediction.value) >= 55
+    )
+    .map(item => ({
+      ...item,
+      aiScore: calculateAiAgentScore(item.prediction)
+    }))
+    .filter(item => item.aiScore >= 60)
+    .sort((a, b) => b.aiScore - a.aiScore);
+
+  const limit =
+    aiAgentBetType === AI_AGENT_BET_TYPES.DOUBLE
+      ? 2
+      : 1;
+
+  return ranked.slice(0, limit);
+}
 function renderRiskyExpertSlip(matches) {
   const candidates = matches
     .map((match) => {

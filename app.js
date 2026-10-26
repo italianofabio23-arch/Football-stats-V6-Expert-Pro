@@ -1729,7 +1729,7 @@ function setAiAgentBetType(type) {
 
 window.setAiAgentBetType = setAiAgentBetType;
 function renderAiAgentPanel(picks) {
-    if (!Array.isArray(picks) || picks.length === 0) {
+    if (!Array.isArray(picks)) {
     return `
       <article class="match-card" id="ai-agent-panel">
         <div class="teams">🤖 AGENTE IA V6 PRO</div>

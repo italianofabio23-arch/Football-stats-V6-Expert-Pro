@@ -1487,7 +1487,7 @@ for (const candidate of candidates) {
 }
 
   if (picks.length < 5) {
-    return `
+  return renderAiAgentPanel(aiAgentPicks) + `
       <article class="match-card">
         <div class="teams">
           🔥 COMBO EXPERT V6 • 5/6 PARTITE
@@ -1522,7 +1522,7 @@ for (const candidate of candidates) {
       1
     );
 
-  return `
+    return renderAiAgentPanel(aiAgentPicks) + `
     <article class="match-card">
 
       <div class="teams">

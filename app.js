@@ -1207,7 +1207,13 @@ if (aiAgentMode === AI_AGENT_MODES.MANUAL) {
     )
     .slice(0, limit);
     }
-  return ranked.slice(0, limit);
+  const safePicks = ranked.filter(item =>
+  Number(item.prediction.value) >= 65 &&
+  Number(item.prediction.confidence) >= 75 &&
+  item.aiScore >= 70
+);
+
+return safePicks.slice(0, limit);
 }
 function renderRiskyExpertSlip(matches) {
   const candidates = matches

@@ -1505,7 +1505,11 @@ options.push(...comboOptions);
 // Selezione indipendente Agente IA V6
   window.aiAgentCandidates = window.aiAgentAllMatches.map(item => ({
   ...item,
-  prediction: [...item.aiMarketOptions].sort((a, b) =>
+  prediction: [...item.aiMarketOptions]
+  .filter(option =>
+    String(option.label || "").includes("+")
+  )
+  .sort((a, b) =>
     b.confidence - a.confidence ||
     b.value - a.value
   )[0]

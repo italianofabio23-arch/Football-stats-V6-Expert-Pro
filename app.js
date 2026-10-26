@@ -1437,7 +1437,7 @@ if (comboMarkets) {
           });
         }
       }
-
+const aiMarketOptions = [...options];
 const comboOptions = options.filter(
   option => option.label.includes("+")
 );
@@ -1495,7 +1495,7 @@ options.push(...comboOptions);
     );
 // Selezione indipendente Agente IA V6
   window.aiAgentCandidates = candidates;
-const aiAgentPicks = selectAiAgentPicks(candidates);
+const aiAgentPicks = selectAiAgentPicks(window.aiAgentCandidates);
   
   // Combo V6: minimo 5, massimo 6 incontri
   const picks = [];

@@ -1165,7 +1165,18 @@ function calculateAiAgentScore(prediction) {
     probabilityScore + confidenceScore + xgScore
   );
 }
+// Partite scelte manualmente dall'utente
+let aiAgentManualSelections = [];
+function getAiAgentMatchId(match) {
+  const source = match.raw || match;
 
+  return String(
+    match.id ||
+    source.fixture?.id ||
+    source.id ||
+    `${match.home}-${match.away}-${match.date}`
+  );
+}
 function selectAiAgentPicks(candidates) {
   if (!Array.isArray(candidates)) return [];
 
@@ -1187,7 +1198,15 @@ function selectAiAgentPicks(candidates) {
     aiAgentBetType === AI_AGENT_BET_TYPES.DOUBLE
       ? 2
       : 1;
-
+if (aiAgentMode === AI_AGENT_MODES.MANUAL) {
+  return ranked
+    .filter(item =>
+      aiAgentManualSelections.includes(
+        getAiAgentMatchId(item.match)
+      )
+    )
+    .slice(0, limit);
+    }
   return ranked.slice(0, limit);
 }
 function renderRiskyExpertSlip(matches) {
@@ -1646,6 +1665,50 @@ for (const candidate of candidates) {
 // ========================================
 // AGENTE IA V6 PRO - PANNELLO PRONOSTICI
 // ========================================
+function toggleAiAgentMatch(matchId) {
+  const id = String(matchId);
+  const index = aiAgentManualSelections.indexOf(id);
+
+  if (index >= 0) {
+    aiAgentManualSelections.splice(index, 1);
+  } else {
+    const limit =
+      aiAgentBetType === AI_AGENT_BET_TYPES.DOUBLE ? 2 : 1;
+
+    if (aiAgentManualSelections.length >= limit) {
+      aiAgentManualSelections.shift();
+    }
+
+    aiAgentManualSelections.push(id);
+  }
+
+  const panel = document.querySelector("#ai-agent-panel");
+
+  if (panel && Array.isArray(window.aiAgentCandidates)) {
+    panel.outerHTML = renderAiAgentPanel(
+      selectAiAgentPicks(window.aiAgentCandidates)
+    );
+  }
+}
+
+window.toggleAiAgentMatch = toggleAiAgentMatch;
+function setAiAgentMode(mode) {
+  if (!Object.values(AI_AGENT_MODES).includes(mode)) {
+    return;
+  }
+
+  aiAgentMode = mode;
+
+  const panel = document.querySelector("#ai-agent-panel");
+
+  if (panel && Array.isArray(window.aiAgentCandidates)) {
+    panel.outerHTML = renderAiAgentPanel(
+      selectAiAgentPicks(window.aiAgentCandidates)
+    );
+  }
+}
+
+window.setAiAgentMode = setAiAgentMode;
 function setAiAgentBetType(type) {
   if (!Object.values(AI_AGENT_BET_TYPES).includes(type)) {
     return;
@@ -1681,6 +1744,14 @@ function renderAiAgentPanel(picks) {
     <article class="match-card" id="ai-agent-panel">
       <div class="teams">🤖 AGENTE IA V6 PRO</div>
       <div class="market-box" style="margin-bottom:12px;">
+  <button type="button" onclick="setAiAgentMode('automatic')">
+    🤖 AUTOMATICO
+  </button>
+  <button type="button" onclick="setAiAgentMode('manual')">
+    ✋ MANUALE
+  </button>
+</div>
+      <div class="market-box" style="margin-bottom:12px;">
   <button type="button" onclick="setAiAgentBetType('single')">
     🎯 SINGOLA
   </button>
@@ -1688,6 +1759,27 @@ function renderAiAgentPanel(picks) {
     🎯 DOPPIA
   </button>
 </div>
+${aiAgentMode === AI_AGENT_MODES.MANUAL ? `
+  <div class="market-box" style="margin-bottom:12px;">
+    <strong>✋ Scegli le partite</strong>
+    ${(window.aiAgentCandidates || [])
+      .filter(item => item && item.match && item.prediction)
+      .map(item => {
+        const id = getAiAgentMatchId(item.match);
+        const selected = aiAgentManualSelections.includes(id);
+        return `
+          <div style="margin-top:8px;">
+            <button type="button"
+              onclick="toggleAiAgentMatch('${escapeHtml(id)}')">
+              ${selected ? "✅" : "⬜"}
+              ${escapeHtml(item.match.home)} -
+              ${escapeHtml(item.match.away)}
+            </button>
+          </div>
+        `;
+      }).join("")}
+  </div>
+` : ""}
       <div class="market-box">
         🎯 ${picks.length === 1 ? "SINGOLA" : "DOPPIA"}
       </div>

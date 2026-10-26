@@ -1216,6 +1216,7 @@ if (aiAgentMode === AI_AGENT_MODES.MANUAL) {
 return safePicks.slice(0, limit);
 }
 function renderRiskyExpertSlip(matches) {
+  window.aiAgentAllMatches = [];
   const candidates = matches
     .map((match) => {
       
@@ -1484,7 +1485,14 @@ options.push(...comboOptions);
   aiMarketOptions
 };
     })
-    .filter(item => item && item.prediction)
+    .filter(item => {
+  if (item?.aiMarketOptions?.length) {
+    window.aiAgentAllMatches = window.aiAgentAllMatches || [];
+    window.aiAgentAllMatches.push(item);
+  }
+  return item && item.prediction;
+})
+  
     .sort(
       (a, b) =>
         b.prediction.confidence -
@@ -1495,13 +1503,14 @@ options.push(...comboOptions);
           a.prediction.value
     );
 // Selezione indipendente Agente IA V6
-  window.aiAgentCandidates = candidates.map(item => ({
+  window.aiAgentCandidates = window.aiAgentAllMatches.map((item => ({
   ...item,
   prediction: [...item.aiMarketOptions].sort((a, b) =>
     b.confidence - a.confidence ||
     b.value - a.value
   )[0]
 }));
+  window.aiAgentCandidates = window.aiAgentCandidates.filter(item => item && item.prediction);
 const aiAgentPicks = selectAiAgentPicks(window.aiAgentCandidates);
   
   // Combo V6: minimo 5, massimo 6 incontri

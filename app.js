@@ -1464,7 +1464,8 @@ options.push(...comboOptions);
         b.prediction.value -
           a.prediction.value
     );
-
+// Selezione indipendente Agente IA V6
+const aiAgentPicks = selectAiAgentPicks(candidates);
   
   // Combo V6: minimo 5, massimo 6 incontri
   const picks = [];

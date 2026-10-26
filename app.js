@@ -1658,9 +1658,9 @@ function setAiAgentBetType(type) {
   );
 
   if (panel && Array.isArray(window.aiAgentCandidates)) {
-    panel.innerHTML = renderAiAgentPanel(
-      selectAiAgentPicks(window.aiAgentCandidates)
-    );
+    panel.outerHTML = renderAiAgentPanel(
+  selectAiAgentPicks(window.aiAgentCandidates)
+);
   }
 }
 

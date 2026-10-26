@@ -1465,6 +1465,7 @@ options.push(...comboOptions);
           a.prediction.value
     );
 // Selezione indipendente Agente IA V6
+  window.aiAgentCandidates = candidates;
 const aiAgentPicks = selectAiAgentPicks(candidates);
   
   // Combo V6: minimo 5, massimo 6 incontri
@@ -1645,7 +1646,25 @@ for (const candidate of candidates) {
 // ========================================
 // AGENTE IA V6 PRO - PANNELLO PRONOSTICI
 // ========================================
+function setAiAgentBetType(type) {
+  if (!Object.values(AI_AGENT_BET_TYPES).includes(type)) {
+    return;
+  }
 
+  aiAgentBetType = type;
+
+  const panel = document.querySelector(
+    "#ai-agent-panel"
+  );
+
+  if (panel && Array.isArray(window.aiAgentCandidates)) {
+    panel.innerHTML = renderAiAgentPanel(
+      selectAiAgentPicks(window.aiAgentCandidates)
+    );
+  }
+}
+
+window.setAiAgentBetType = setAiAgentBetType;
 function renderAiAgentPanel(picks) {
   if (!Array.isArray(picks) || picks.length === 0) {
     return `
@@ -1659,8 +1678,16 @@ function renderAiAgentPanel(picks) {
   }
 
   return `
-    <article class="match-card">
+    <article class="match-card" id="ai-agent-panel">
       <div class="teams">🤖 AGENTE IA V6 PRO</div>
+      <div class="market-box" style="margin-bottom:12px;">
+  <button type="button" onclick="setAiAgentBetType('single')">
+    🎯 SINGOLA
+  </button>
+  <button type="button" onclick="setAiAgentBetType('double')">
+    🎯 DOPPIA
+  </button>
+</div>
       <div class="market-box">
         🎯 ${picks.length === 1 ? "SINGOLA" : "DOPPIA"}
       </div>

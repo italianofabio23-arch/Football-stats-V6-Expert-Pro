@@ -1503,7 +1503,7 @@ options.push(...comboOptions);
           a.prediction.value
     );
 // Selezione indipendente Agente IA V6
-  window.aiAgentCandidates = window.aiAgentAllMatches.map((item => ({
+  window.aiAgentCandidates = window.aiAgentAllMatches.map(item => ({
   ...item,
   prediction: [...item.aiMarketOptions].sort((a, b) =>
     b.confidence - a.confidence ||

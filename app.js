@@ -1802,6 +1802,45 @@ ${aiAgentMode === AI_AGENT_MODES.MANUAL ? `
       <div class="market-box">
         🎯 ${picks.length === 1 ? "SINGOLA" : "DOPPIA"}
       </div>
+      ${picks.length === 2 ? `
+  <div class="market-box">
+    <strong>📊 ANALISI DOPPIA V6</strong>
+    <div>
+      🎯 Probabilità combinata:
+      ${(
+        picks.reduce(
+          (total, item) =>
+            total * (Number(item.prediction.value) / 100),
+          1
+        ) * 100
+      ).toFixed(1)}%
+    </div>
+    <div>
+      💰 Quota teorica:
+      ${(
+        1 / picks.reduce(
+          (total, item) =>
+            total * (Number(item.prediction.value) / 100),
+          1
+        )
+      ).toFixed(2)}
+    </div>
+    <div>
+      ⚠️ Rischio:
+      ${picks.reduce(
+        (total, item) =>
+          total * (Number(item.prediction.value) / 100),
+        1
+      ) >= 0.60 ? "BASSO" :
+        picks.reduce(
+          (total, item) =>
+            total * (Number(item.prediction.value) / 100),
+          1
+        ) >= 0.40 ? "MEDIO" : "ALTO"}
+    </div>
+    <small>Stime del modello, ipotizzando eventi indipendenti.</small>
+  </div>
+` : ""}
       <div class="market-grid">
         ${picks.map(({ match, prediction, aiScore }) => `
           <div class="market-box">

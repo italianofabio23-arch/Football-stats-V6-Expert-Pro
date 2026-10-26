@@ -1729,16 +1729,35 @@ function setAiAgentBetType(type) {
 
 window.setAiAgentBetType = setAiAgentBetType;
 function renderAiAgentPanel(picks) {
-  if (!Array.isArray(picks) || picks.length === 0) {
+    if (!Array.isArray(picks) || picks.length === 0) {
     return `
-      <article class="match-card">
+      <article class="match-card" id="ai-agent-panel">
         <div class="teams">🤖 AGENTE IA V6 PRO</div>
+
         <div class="market-box">
-          Nessun pronostico supera i filtri attuali.
+          <button type="button" onclick="setAiAgentMode('automatic')">
+            🤖 AUTOMATICO
+          </button>
+          <button type="button" onclick="setAiAgentMode('manual')">
+            ✋ MANUALE
+          </button>
+        </div>
+
+        <div class="market-box">
+          <button type="button" onclick="setAiAgentBetType('single')">
+            🎯 SINGOLA
+          </button>
+          <button type="button" onclick="setAiAgentBetType('double')">
+            🎯 DOPPIA
+          </button>
+        </div>
+
+        <div class="market-box">
+          Nessun pronostico selezionato con i filtri attuali.
         </div>
       </article>
     `;
-  }
+    }
 
   return `
     <article class="match-card" id="ai-agent-panel">

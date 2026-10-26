@@ -1478,12 +1478,13 @@ options.push(...comboOptions);
   );
 });
 
-      return {
-        match,
-        prediction: options[0]
-      };
+  return {
+  match,
+  prediction: options[0],
+  aiMarketOptions
+};
     })
-    .filter(Boolean)
+    .filter(item => item && item.prediction)
     .sort(
       (a, b) =>
         b.prediction.confidence -
@@ -1494,7 +1495,13 @@ options.push(...comboOptions);
           a.prediction.value
     );
 // Selezione indipendente Agente IA V6
-  window.aiAgentCandidates = candidates;
+  window.aiAgentCandidates = candidates.map(item => ({
+  ...item,
+  prediction: [...item.aiMarketOptions].sort((a, b) =>
+    b.confidence - a.confidence ||
+    b.value - a.value
+  )[0]
+}));
 const aiAgentPicks = selectAiAgentPicks(window.aiAgentCandidates);
   
   // Combo V6: minimo 5, massimo 6 incontri

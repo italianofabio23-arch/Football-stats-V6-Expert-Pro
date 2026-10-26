@@ -1447,9 +1447,13 @@ options.length = 0;
 options.push(...comboOptions);
       
       
-      if (!options.length) {
-        return null;
-      }
+    if (!options.length) {
+  return {
+    match,
+    prediction: null,
+    aiMarketOptions
+  };
+    }
 
       // Preferisce:
       // 1. mercati squadra con xG alto

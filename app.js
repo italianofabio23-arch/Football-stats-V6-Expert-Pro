@@ -1642,7 +1642,50 @@ for (const candidate of candidates) {
     </article>
   `;
 }
+// ========================================
+// AGENTE IA V6 PRO - PANNELLO PRONOSTICI
+// ========================================
 
+function renderAiAgentPanel(picks) {
+  if (!Array.isArray(picks) || picks.length === 0) {
+    return `
+      <article class="match-card">
+        <div class="teams">🤖 AGENTE IA V6 PRO</div>
+        <div class="market-box">
+          Nessun pronostico supera i filtri attuali.
+        </div>
+      </article>
+    `;
+  }
+
+  return `
+    <article class="match-card">
+      <div class="teams">🤖 AGENTE IA V6 PRO</div>
+      <div class="market-box">
+        🎯 ${picks.length === 1 ? "SINGOLA" : "DOPPIA"}
+      </div>
+      <div class="market-grid">
+        ${picks.map(({ match, prediction, aiScore }) => `
+          <div class="market-box">
+            <span>
+              ${escapeHtml(match.home)} -
+              ${escapeHtml(match.away)}
+              <br>
+              ${escapeHtml(prediction.label)}
+              <br>
+              🤖 Punteggio agente: ${aiScore}/100
+              <br>
+              🎯 Confidence: ${prediction.confidence}%
+            </span>
+            <div class="market-value">
+              ${clampPercent(prediction.value)}%
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </article>
+  `;
+}
 // ==========================================
 // BLOCCO 4A - Backend V4 e gestione date
 // ==========================================

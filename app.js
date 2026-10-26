@@ -1789,7 +1789,7 @@ ${aiAgentMode === AI_AGENT_MODES.MANUAL ? `
         return `
           <div style="margin-top:8px;">
             <button type="button"
-              onclick="toggleAiAgentMatch('${escapeHtml(id)}')">
+              onclick="toggleAiAgentMatch('${id}')">
               ${selected ? "✅" : "⬜"}
               ${escapeHtml(item.match.home)} -
               ${escapeHtml(item.match.away)}

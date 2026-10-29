@@ -327,9 +327,23 @@ button {
     align-items: flex-start;
   }
 
-  .market-grid {
-    grid-template-columns: 1fr 1fr;
-  }
+  
+.market-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+#ai-agent-panel .market-box {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+#ai-agent-panel input {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+  
 
   .teams {
     font-size: 17px;

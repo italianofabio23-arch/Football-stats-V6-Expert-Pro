@@ -1867,7 +1867,22 @@ ${aiAgentMode === AI_AGENT_MODES.MANUAL ? `
             total * (Number(item.prediction.value) / 100),
           1
         ) >= 0.40 ? "MEDIO" : "ALTO"}
-    </div>
+       </div> 
+<div class="market-box">
+  🏦 Quota totale bookmaker DOPPIA:
+  <input
+    type="number"
+    class="v6-ai-double-odds"
+    min="1.01"
+    step="0.01"
+    inputmode="decimal"
+    placeholder="Es. 2.40"
+  >
+  <div class="v6-ai-double-result">
+    Inserisci la quota totale della doppia.
+  </div>
+</div>
+
     <small>Stime del modello, ipotizzando eventi indipendenti.</small>
   </div>
 ` : ""}
@@ -1957,6 +1972,46 @@ document.addEventListener("input", function (event) {
     `${valuePercent.toFixed(1)}%` +
     ` | Quota equa: ${fairOdds.toFixed(2)}`;
 });
+
+document.addEventListener("input", function (event) {
+  const input = event.target;
+  if (!input.matches(".v6-ai-double-odds")) return;
+
+  const panel = input.closest("#ai-agent-panel");
+  const result = panel?.querySelector(".v6-ai-double-result");
+  if (!panel || !result) return;
+
+  const probabilities = [...panel.querySelectorAll(".v6-ai-odds")]
+    .map(el => Number(el.dataset.probability) / 100);
+
+  if (probabilities.length !== 2 ||
+      probabilities.some(p => !Number.isFinite(p) || p <= 0 || p > 1)) {
+    result.textContent = "Probabilità della doppia non disponibili.";
+    return;
+  }
+
+  const odds = Number(input.value);
+  if (!input.value.trim() || !Number.isFinite(odds) || odds <= 1) {
+    result.textContent = "Inserisci una quota totale valida.";
+    return;
+  }
+
+  const probability = probabilities[0] * probabilities[1];
+  const fairOdds = 1 / probability;
+  const value = (odds * probability - 1) * 100;
+
+  const status = value >= 5
+    ? "🟢 VALUE BET"
+    : value > 0
+      ? "🟡 Valore basso"
+      : "🔴 Non conveniente";
+
+  result.textContent =
+    `${status} | Valore: ${value >= 0 ? "+" : ""}${value.toFixed(1)}%` +
+    ` | Quota equa: ${fairOdds.toFixed(2)}` +
+    ` | Probabilità: ${(probability * 100).toFixed(1)}%`;
+});
+    
 // ==========================================
 // BLOCCO 4A - Backend V4 e gestione date
 // ==========================================

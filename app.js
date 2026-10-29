@@ -1887,12 +1887,76 @@ ${aiAgentMode === AI_AGENT_MODES.MANUAL ? `
             <div class="market-value">
               ${clampPercent(prediction.value)}%
             </div>
+            <div class="market-value">
+  💰 Quota equa IA:
+  ${(
+    100 / Math.max(
+      1,
+      clampPercent(prediction.value)
+    )
+  ).toFixed(2)}
+</div>
+<div class="market-box">
+  🏦 Quota bookmaker:
+  <input
+    type="number"
+    class="v6-ai-odds"
+    min="1.01"
+    step="0.01"
+    inputmode="decimal"
+    placeholder="Es. 1.80"
+    data-probability="${clampPercent(prediction.value)}"
+  >
+  <div class="v6-ai-value-result">
+    Inserisci la quota per valutare la convenienza.
+  </div>
+</div>
           </div>
         `).join("")}
       </div>
     </article>
   `;
 }
+// V6 PRO - Calcolo quota bookmaker e Value Bet IA
+document.addEventListener("input", function (event) {
+  const input = event.target;
+
+  if (!input.matches(".v6-ai-odds")) return;
+
+  const box = input.closest(".market-box");
+  const result = box?.querySelector(".v6-ai-value-result");
+
+  if (!result) return;
+
+  const odds = Number(input.value);
+  const probability = Number(input.dataset.probability);
+
+  if (
+    !Number.isFinite(odds) ||
+    odds <= 1 ||
+    !Number.isFinite(probability) ||
+    probability <= 0 ||
+    probability > 100
+  ) {
+    result.textContent = "Inserisci una quota valida.";
+    return;
+  }
+
+  const fairOdds = 100 / probability;
+  const valuePercent = odds * probability - 100;
+
+  const status =
+    valuePercent >= 5
+      ? "🟢 VALUE BET"
+      : valuePercent > 0
+        ? "🟡 Valore basso"
+        : "🔴 Non conveniente";
+
+  result.textContent =
+    `${status} ${valuePercent >= 0 ? "+" : ""}` +
+    `${valuePercent.toFixed(1)}%` +
+    ` | Quota equa: ${fairOdds.toFixed(2)}`;
+});
 // ==========================================
 // BLOCCO 4A - Backend V4 e gestione date
 // ==========================================

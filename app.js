@@ -1444,9 +1444,6 @@ const comboOptions = options.filter(
 );
 
       
-options.length = 0;
-options.push(...comboOptions);
-      
       
     if (!options.length) {
   return {
@@ -1460,24 +1457,18 @@ options.push(...comboOptions);
       // 1. mercati squadra con xG alto
       // 2. maggiore confidence
       // 3. maggiore probabilità
-      options.sort((a, b) => {
-  const bonus = (option) => {
-    const label = option.label || "";
-    if (label.includes("GG + Over 2.5")) return 5;
-    if (label.includes("1 + Over 2.5")) return 4;
-    if (label.includes("2 + Over 1.5")) return 4;
-    if (label.includes("X2 + Over 2.5")) return 3;
-    if (label.includes("1X + Over 2.5")) return 3;
-    if (label.includes("X2 + GG")) return 3;
-    return 0;
+      
+options.sort((a, b) => {
+  const score = (pick) => {
+    const probability = Number(pick.value) || 0;
+    const confidence = Number(pick.confidence) || 0;
+
+    return probability * 0.65 + confidence * 0.35;
   };
 
-  return (
-    (b.priority + bonus(b)) - (a.priority + bonus(a)) ||
-    b.confidence - a.confidence ||
-    b.value - a.value
-  );
+  return score(b) - score(a);
 });
+      
 
   return {
   match,
@@ -1505,10 +1496,9 @@ options.push(...comboOptions);
 // Selezione indipendente Agente IA V6
   window.aiAgentCandidates = window.aiAgentAllMatches.map(item => ({
   ...item,
-  prediction: [...item.aiMarketOptions]
-  .filter(option =>
-    String(option.label || "").includes("+")
-  )
+  
+prediction: [...item.aiMarketOptions]
+  
   .sort((a, b) =>
     b.confidence - a.confidence ||
     b.value - a.value

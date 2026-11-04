@@ -1793,7 +1793,13 @@ function selectHighOddsV6Picks(matches) {
         item.prediction.confidence >= 70 &&
         item.aiScore >= 65
       )
-      .sort((a, b) => b.aiScore - a.aiScore);
+    
+.sort((a, b) =>
+  Number(b.prediction.label.includes("Over 2.5")) -
+  Number(a.prediction.label.includes("Over 2.5")) ||
+  b.aiScore - a.aiScore
+);
+    
 
     if (options.length) {
       picks.push(options[0]);

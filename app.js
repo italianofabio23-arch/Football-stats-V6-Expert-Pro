@@ -927,10 +927,13 @@ const picks = matches
       antiFalse
     };
   })
-  .filter(
-    (item) =>
-      item.antiFalse.status === "top"
+  
+  .filter(item =>
+    Number(item.match?.expertData?.homePlayed) >= 6 &&
+    Number(item.match?.expertData?.awayPlayed) >= 6 &&
+    item.antiFalse.status === "top"
   )
+  
   .sort(
     (a, b) =>
       Number(b.antiFalse.score) -

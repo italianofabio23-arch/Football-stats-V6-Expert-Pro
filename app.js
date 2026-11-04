@@ -1923,6 +1923,16 @@ ${aiAgentMode === AI_AGENT_MODES.MANUAL ? `
               🤖 Punteggio agente: ${aiScore}/100
               <br>
               🎯 Confidence: ${prediction.confidence}%
+              
+<br>
+⚽ xG previsti Casa / Trasferta:
+${Number(match.xg?.home).toFixed(2)} /
+${Number(match.xg?.away).toFixed(2)}
+<br>
+📊 Partite analizzate Casa / Trasferta:
+${Number(match.expertData?.homePlayed) || 0} /
+${Number(match.expertData?.awayPlayed) || 0}
+
             </span>
             <div class="market-value">
               ${clampPercent(prediction.value)}%

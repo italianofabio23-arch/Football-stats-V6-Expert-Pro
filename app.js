@@ -903,6 +903,9 @@ matches = enrichedMatches;
   resultsContainer.innerHTML =
   renderTop80Slip(matches) +
   renderRiskyExpertSlip(matches) +
+    
+renderHighOddsV6Slip(matches) +
+    
   matches.map(renderMatchCard).join("");
     }
 function renderTop80Slip(matches) {
@@ -1729,6 +1732,136 @@ if (
     </article>
   `;
 }
+
+function selectHighOddsV6Picks(matches) {
+  const picks = [];
+
+  for (const match of matches) {
+    const source = match.raw || match;
+
+    const kickoff = Date.parse(
+      source?.fixture?.date ||
+      source?.utcDate ||
+      match.date ||
+      ""
+    );
+
+    const status = String(
+      source?.fixture?.status?.short ||
+      match.status ||
+      ""
+    ).toUpperCase();
+
+    if (!Number.isFinite(kickoff) || kickoff <= Date.now()) continue;
+    if (!["NS", "SCHEDULED", "TIMED"].includes(status)) continue;
+
+    const data = match.expertData;
+
+    if (
+      !(Number(data?.homePlayed) >= 6) ||
+      !(Number(data?.awayPlayed) >= 6)
+    ) continue;
+
+    const markets = calculateV6ComboProbabilities(
+      match.xg?.home,
+      match.xg?.away
+    );
+
+    if (!markets) continue;
+
+    const options = Object.entries(markets)
+      .filter(([label, value]) =>
+        label.includes("+") &&
+        Number(value) >= 50 &&
+        Number(value) <= 76
+      )
+      .map(([label, value]) => {
+        const prediction = {
+          label,
+          value,
+          confidence: calculateConfidenceScore(match, { value }),
+          xg: Number(match.xg.home) + Number(match.xg.away)
+        };
+
+        return {
+          match,
+          prediction,
+          aiScore: calculateAiAgentScore(prediction, match)
+        };
+      })
+      .filter(item =>
+        item.prediction.confidence >= 70 &&
+        item.aiScore >= 65
+      )
+      .sort((a, b) => b.aiScore - a.aiScore);
+
+    if (options.length) {
+      picks.push(options[0]);
+    }
+  }
+
+  return picks
+    .sort((a, b) => b.aiScore - a.aiScore)
+    .slice(0, 6);
+}
+
+function renderHighOddsV6Slip(matches) {
+  const picks = selectHighOddsV6Picks(matches);
+
+  const combinedProbability = picks.reduce(
+    (total, item) =>
+      total * (Number(item.prediction.value) / 100),
+    1
+  );
+
+  const fairOdds = combinedProbability > 0
+    ? 1 / combinedProbability
+    : 0;
+
+  return `
+    <article class="match-card">
+      <div class="teams">
+        🔥 COMBO ALTA QUOTA V6 • 5/6 PARTITE
+      </div>
+
+      <div class="market-box">
+        ⚠️ RISCHIO ALTO • Stime statistiche
+      </div>
+
+      <div class="market-grid">
+        ${picks.map(({ match, prediction, aiScore }) => `
+          <div class="market-box">
+            <strong>
+              ${escapeHtml(match.home)} -
+              ${escapeHtml(match.away)}
+            </strong>
+            <br>
+            ${escapeHtml(prediction.label)}
+            <div class="market-value">
+              ${clampPercent(prediction.value)}%
+            </div>
+            <small>
+              Confidence: ${prediction.confidence}%
+              | IA: ${aiScore}/100
+            </small>
+          </div>
+        `).join("")}
+      </div>
+
+      <div class="market-box">
+        Selezioni disponibili: ${picks.length}/6
+        <br>
+        ${picks.length >= 5
+          ? `Quota equa combinata: ${fairOdds.toFixed(2)}`
+          : "⚠️ Meno di 5 selezioni idonee."
+        }
+        <br>
+        Stime teoriche con eventi ipotizzati indipendenti.
+      </div>
+    </article>
+  `;
+}
+
 // ========================================
 // AGENTE IA V6 PRO - PANNELLO PRONOSTICI
 // ========================================

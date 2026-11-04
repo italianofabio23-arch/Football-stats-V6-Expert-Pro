@@ -1806,9 +1806,15 @@ function selectHighOddsV6Picks(matches) {
     }
   }
 
-  return picks
-    .sort((a, b) => b.aiScore - a.aiScore)
-    .slice(0, 6);
+  
+return picks
+  .sort((a, b) =>
+    Number(b.prediction.label.includes("Over 2.5")) -
+    Number(a.prediction.label.includes("Over 2.5")) ||
+    b.aiScore - a.aiScore
+  )
+  .slice(0, 6);
+  
 }
 
 function renderHighOddsV6Slip(matches) {

@@ -1236,6 +1236,10 @@ if (aiAgentMode === AI_AGENT_MODES.MANUAL) {
     .slice(0, limit);
     }
   const safePicks = ranked.filter(item =>
+    
+  Number(item.match?.expertData?.homePlayed) >= 6 &&
+  Number(item.match?.expertData?.awayPlayed) >= 6 &&
+    
   Number(item.prediction.value) >= 65 &&
   Number(item.prediction.confidence) >= 75 &&
   item.aiScore >= 70
@@ -1548,6 +1552,11 @@ const aiScore = calculateAiAgentScore(
 );
 
 if (aiScore < 70) continue;
+  
+if (
+  !(Number(candidate.match?.expertData?.homePlayed) >= 6) ||
+  !(Number(candidate.match?.expertData?.awayPlayed) >= 6)
+) continue;
   
   if ((marketCounts[market] || 0) >= 2) {
     continue;

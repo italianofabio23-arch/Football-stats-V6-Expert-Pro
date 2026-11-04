@@ -1143,11 +1143,14 @@ const AI_AGENT_BET_TYPES = {
 
 let aiAgentBetType = AI_AGENT_BET_TYPES.SINGLE;
 
-function calculateAiAgentScore(prediction) {
+function calculateAiAgentScore(prediction, match = null) {
   const probability = Number(prediction.value);
   const confidence = Number(prediction.confidence);
   const xg = Number(prediction.xg);
 
+const marketLabel = String(prediction.label || "");
+const upsetRisk = match?.upsetRisk?.score;
+  
   if (
     !Number.isFinite(probability) ||
     !Number.isFinite(confidence)
@@ -1161,9 +1164,32 @@ function calculateAiAgentScore(prediction) {
     ? Math.min(Math.max(xg, 0) / 4, 1) * 20
     : 0;
 
-  return Math.round(
-    probabilityScore + confidenceScore + xgScore
-  );
+  
+const homeWin = Number(match?.probabilities?.homeWin);
+const awayWin = Number(match?.probabilities?.awayWin);
+
+const favoriteSide =
+  Number.isFinite(homeWin) && Number.isFinite(awayWin)
+    ? homeWin > awayWin ? "home"
+      : awayWin > homeWin ? "away" : null
+    : null;
+
+const backsFavorite =
+  (favoriteSide === "home" &&
+    /\b(?:1X|1)\s*\+/.test(marketLabel)) ||
+  (favoriteSide === "away" &&
+    /\b(?:X2|2)\s*\+/.test(marketLabel));
+
+const risk = Number(upsetRisk);
+const riskPenalty =
+  backsFavorite && Number.isFinite(risk) && risk > 45
+    ? Math.min(10, (risk - 45) * 0.4)
+    : 0;
+
+return Math.max(0, Math.min(100, Math.round(
+  probabilityScore + confidenceScore + xgScore - riskPenalty
+)));
+  
 }
 // Partite scelte manualmente dall'utente
 let aiAgentManualSelections = [];
@@ -1189,7 +1215,9 @@ function selectAiAgentPicks(candidates) {
     )
     .map(item => ({
       ...item,
-      aiScore: calculateAiAgentScore(item.prediction)
+      
+aiScore: calculateAiAgentScore(item.prediction, item.match)
+      
     }))
     .filter(item => item.aiScore >= 60)
     .sort((a, b) => b.aiScore - a.aiScore);

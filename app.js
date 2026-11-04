@@ -1542,6 +1542,13 @@ const marketCounts = {};
 for (const candidate of candidates) {
   const market = candidate.prediction.label;
 
+const aiScore = calculateAiAgentScore(
+  candidate.prediction,
+  candidate.match
+);
+
+if (aiScore < 70) continue;
+  
   if ((marketCounts[market] || 0) >= 2) {
     continue;
   }

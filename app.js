@@ -907,6 +907,55 @@ matches = enrichedMatches;
 renderHighOddsV6Slip(matches) +
     
   matches.map(renderMatchCard).join("");
+  
+  // V6 STUDIO TV - Esportazione pronostici gol
+  try {
+    const studioMatches = matches.map(match => {
+      const p = match.probabilities || {};
+      const sampleSize = Math.min(
+        Number(match.expertData?.homePlayed) || 0,
+        Number(match.expertData?.awayPlayed) || 0
+      );
+
+      const values = [
+        ["over25", "Over 2.5 gol", p.over25],
+        ["gg", "GG / BTTS", p.btts],
+        ["1x2", "1 Casa", p.homeWin],
+        ["1x2", "X Pareggio", p.draw],
+        ["1x2", "2 Ospite", p.awayWin]
+      ];
+
+      return {
+        home: match.home,
+        away: match.away,
+        date: String(match.date || "").slice(0, 10),
+        league: String(match.league || ""),
+        markets: values
+          .filter(([, , v]) => Number.isFinite(Number(v)))
+          .map(([key, label, v]) => ({
+            category: "goals",
+            key,
+            label,
+            probability: Number(v),
+            confidence: calculateConfidenceScore(
+              match, { value: Number(v) }
+            ),
+            sampleSize
+          }))
+      };
+    });
+
+    localStorage.setItem(
+      "v6_studio_pro_feed_v1",
+      JSON.stringify({
+        generatedAt: new Date().toISOString(),
+        matches: studioMatches
+      })
+    );
+  } catch (error) {
+    console.warn("V6 Studio TV:", error);
+  }
+  
     }
 function renderTop80Slip(matches) {
 const picks = matches

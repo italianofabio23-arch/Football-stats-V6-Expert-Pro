@@ -2280,7 +2280,14 @@ BSB: "Brasileirão Serie B",
   
   CL: "UEFA Champions League",
   EL: "UEFA Europa League",
-  CH: "Championship"
+  
+  CH: "Championship",
+  NO1: "Eliteserien",
+  SE1: "Allsvenskan",
+  CZ1: "Czech Liga",
+  DK1: "Superliga",
+  BE1: "Jupiler Pro League"
+  
 };
 // ==========================================
 // V6 - DATI GIOCATORI / POSSIBILI MARCATORI
@@ -3116,6 +3123,22 @@ function filterSelectedLeagues(games) {
     ).toLowerCase();
 
     return selected.some((code) => {
+      
+      // V6 PRO - Filtri nuovi campionati europei
+      const newCountry = {
+        NO1: "norway",
+        SE1: "sweden",
+        CZ1: "czech",
+        DK1: "denmark",
+        BE1: "belgium"
+      }[code];
+
+      if (newCountry) {
+        return country.includes(newCountry) &&
+          name === LEAGUE_NAMES[code].toLowerCase();
+      }
+
+      
       if (code === "BSA") {
         return country === "brazil" &&
           name.includes("serie a");

@@ -18,7 +18,40 @@ const leagueCheckboxes = document.querySelectorAll(
 
 let selectedStrategy = "GG / BTTS";
 let selectedDays = 1;
+// ========================================
+// V6 PRO - STORICO AFFIDABILITA' REALE
+// ========================================
 
+const V6_PRO_HISTORY_KEY =
+  "v6_pro_prediction_history_v1";
+
+function loadV6ProHistory() {
+  try {
+    const saved = localStorage.getItem(
+      V6_PRO_HISTORY_KEY
+    );
+
+    const history = JSON.parse(saved || "[]");
+
+    return Array.isArray(history) ? history : [];
+  } catch (error) {
+    console.warn("Errore lettura storico V6 Pro", error);
+    return [];
+  }
+}
+
+function saveV6ProHistory(history) {
+  try {
+    localStorage.setItem(
+      V6_PRO_HISTORY_KEY,
+      JSON.stringify(history)
+    );
+    return true;
+  } catch (error) {
+    console.warn("Errore salvataggio storico V6 Pro", error);
+    return false;
+  }
+}
 // Selezione strategia
 presetButtons.forEach((button) => {
   button.addEventListener("click", () => {

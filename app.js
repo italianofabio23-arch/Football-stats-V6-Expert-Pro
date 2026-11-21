@@ -1314,6 +1314,7 @@ matches = enrichedMatches;
   renderTop80Slip(matches) +
   renderRiskyExpertSlip(matches) +
     
+renderV6ProReliabilityPanel() +
 renderHighOddsV6Slip(matches) +
     
   matches.map(renderMatchCard).join("");

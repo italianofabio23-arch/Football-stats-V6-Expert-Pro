@@ -302,6 +302,133 @@ async function updateV6ProHistoryResults() {
     saveV6ProHistory(history);
   }
 }
+// ========================================
+// V6 PRO - PANNELLO AFFIDABILITA' REALE
+// ========================================
+
+function renderV6ProReliabilityPanel() {
+  const history = loadV6ProHistory();
+
+  const settled = history.filter(item =>
+    item.status === "settled" &&
+    typeof item.won === "boolean"
+  );
+
+  const pending = history.filter(item =>
+    item.status === "pending"
+  );
+
+  const wins = settled.filter(item => item.won).length;
+  const losses = settled.length - wins;
+
+  const fixtures = new Set(
+    settled.map(item => item.fixtureId)
+  ).size;
+
+  const pendingFixtures = new Set(
+    pending.map(item => item.fixtureId)
+  ).size;
+
+  const hitRate = settled.length
+    ? (wins / settled.length * 100).toFixed(1)
+    : "—";
+
+  const markets = new Map();
+
+  for (const item of settled) {
+    const key = String(item.market || "").trim();
+    if (!key) continue;
+
+    if (!markets.has(key)) {
+      markets.set(key, {
+        count: 0,
+        wins: 0,
+        predictedSum: 0,
+        predictedCount: 0
+      });
+    }
+
+    const data = markets.get(key);
+    data.count++;
+
+    if (item.won) data.wins++;
+
+    const probability = Number(item.probability);
+
+    if (Number.isFinite(probability)) {
+      data.predictedSum += probability;
+      data.predictedCount++;
+    }
+  }
+
+  const rows = [...markets.entries()]
+    .sort((a, b) => b[1].count - a[1].count)
+    .map(([market, data]) => {
+      const actual = (
+        data.wins / data.count * 100
+      ).toFixed(1);
+
+      const predicted = data.predictedCount
+        ? (
+            data.predictedSum /
+            data.predictedCount
+          ).toFixed(1)
+        : "—";
+
+      const label = data.count < 30
+        ? "⏳ Campione limitato"
+        : "📊 Storico da monitorare";
+
+      return `
+        <div class="market-box">
+          <strong>${escapeHtml(market)}</strong>
+          <div>✅ ${data.wins}/${data.count} vinte</div>
+          <div>📈 Successo reale: ${actual}%</div>
+          <div>🧠 Previsione media: ${predicted}%</div>
+          <div>${label}</div>
+        </div>
+      `;
+    }).join("");
+
+  return `
+    <article class="match-card"
+      id="v6-pro-reliability-panel">
+
+      <div class="teams">
+        🛡️ V6 PRO - CONTROLLO AFFIDABILITÀ
+      </div>
+
+      <div class="market-box">
+        ✅ Mercati verificati: ${settled.length}
+        <div>⚽ Partite distinte: ${fixtures}</div>
+        <div>🟢 Vinti: ${wins}</div>
+        <div>🔴 Persi: ${losses}</div>
+        <div>📊 Successo osservato: ${hitRate}${settled.length ? "%" : ""}</div>
+      </div>
+
+      <div class="market-box">
+        ⏳ Mercati in attesa: ${pending.length}
+        <div>Partite in attesa: ${pendingFixtures}</div>
+      </div>
+
+      ${rows || `
+        <div class="market-box">
+          Storico reale ancora insufficiente.
+          Servono partite concluse e verificate.
+        </div>
+      `}
+
+      <div class="market-box">
+        ℹ️ Statistiche dei mercati candidati IA,
+        non necessariamente giocati.
+        Mercati della stessa partita sono correlati.
+        Le percentuali storiche non garantiscono
+        i risultati futuri.
+      </div>
+
+    </article>
+  `;
+}
 // Selezione strategia
 presetButtons.forEach((button) => {
   button.addEventListener("click", () => {

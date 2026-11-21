@@ -125,6 +125,47 @@ function recordV6ProPrematchCandidates(candidates) {
     saveV6ProHistory(history);
   }
 }
+// ========================================
+// V6 PRO - VERIFICA REALE MERCATI COMBO
+// ========================================
+
+function evaluateV6ProComboResult(
+  market, homeGoals, awayGoals
+) {
+  const h = Number(homeGoals);
+  const a = Number(awayGoals);
+
+  if (
+    !Number.isInteger(h) ||
+    !Number.isInteger(a) ||
+    h < 0 || a < 0
+  ) {
+    return null;
+  }
+
+  const total = h + a;
+  const gg = h > 0 && a > 0;
+
+  const rules = {
+    "1X + Over 1.5": h >= a && total >= 2,
+    "X2 + Over 1.5": a >= h && total >= 2,
+    "1X + Over 2.5": h >= a && total >= 3,
+    "X2 + Over 2.5": a >= h && total >= 3,
+    "GG + Over 2.5": gg && total >= 3,
+    "12 + Over 2.5": h !== a && total >= 3,
+    "1 + Over 2.5": h > a && total >= 3,
+    "2 + Over 1.5": a > h && total >= 2,
+    "X2 + GG": a >= h && gg
+  };
+
+  const key = String(market || "")
+    .replace(/^🎯\s*/, "")
+    .trim();
+
+  return Object.prototype.hasOwnProperty.call(
+    rules, key
+  ) ? rules[key] : null;
+}
 // Selezione strategia
 presetButtons.forEach((button) => {
   button.addEventListener("click", () => {

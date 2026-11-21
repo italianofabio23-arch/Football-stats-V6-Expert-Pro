@@ -208,6 +208,100 @@ async function fetchV6ProFixtureById(fixtureId) {
     Number(game?.fixture?.id) === id
   ) || null;
 }
+// ========================================
+// V6 PRO - AGGIORNAMENTO ESITI REALI
+// ========================================
+
+async function updateV6ProHistoryResults() {
+  const history = loadV6ProHistory();
+  const now = Date.now();
+
+  const pendingIds = [...new Set(
+    history
+      .filter(item => {
+        const kickoff = Date.parse(item.date || "");
+        const id = Number(item.fixtureId);
+
+        return item.status === "pending" &&
+          Number.isInteger(id) && id > 0 &&
+          Number.isFinite(kickoff) &&
+          now >= kickoff + 3 * 60 * 60 * 1000;
+      })
+      .sort((a, b) =>
+        Date.parse(a.date) - Date.parse(b.date)
+      )
+      .map(item => Number(item.fixtureId))
+  )].slice(0, 12);
+
+  let changed = false;
+
+  for (const fixtureId of pendingIds) {
+    try {
+      const fixture = await fetchV6ProFixtureById(
+        fixtureId
+      );
+
+      if (!fixture) continue;
+
+      // Solo risultati finali nei 90 minuti
+      if (fixture.fixture?.status?.short !== "FT") {
+        continue;
+      }
+
+      const rawHome = fixture.goals?.home;
+      const rawAway = fixture.goals?.away;
+
+      if (rawHome == null || rawAway == null) {
+        continue;
+      }
+
+      const homeGoals = Number(rawHome);
+      const awayGoals = Number(rawAway);
+
+      if (!Number.isInteger(homeGoals) ||
+          !Number.isInteger(awayGoals) ||
+          homeGoals < 0 || awayGoals < 0) {
+        continue;
+      }
+
+      for (const item of history) {
+        if (Number(item.fixtureId) !== fixtureId ||
+            item.status !== "pending") {
+          continue;
+        }
+
+        const won = evaluateV6ProComboResult(
+          item.market,
+          homeGoals,
+          awayGoals
+        );
+
+        if (won === null) continue;
+
+        item.won = won;
+        item.result = {
+          home: homeGoals,
+          away: awayGoals
+        };
+        item.status = "settled";
+        item.settledAt = new Date().toISOString();
+
+        changed = true;
+      }
+
+    } catch (error) {
+      console.warn(
+        "V6 Pro - Errore verifica risultato",
+        fixtureId,
+        error
+      );
+    }
+  }
+
+  if (changed) {
+    saveV6ProHistory(history);
+  }
+}
 // Selezione strategia
 presetButtons.forEach((button) => {
   button.addEventListener("click", () => {

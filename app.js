@@ -1789,6 +1789,7 @@ prediction: [...item.aiMarketOptions]
   )[0]
 }));
   window.aiAgentCandidates = window.aiAgentCandidates.filter(item => item && item.prediction);
+  recordV6ProPrematchCandidates(window.aiAgentAllMatches);
 const aiAgentPicks = selectAiAgentPicks(window.aiAgentCandidates);
   
   // Combo V6: minimo 5, massimo 6 incontri

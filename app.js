@@ -52,6 +52,79 @@ function saveV6ProHistory(history) {
     return false;
   }
 }
+// V6 PRO - REGISTRAZIONE PRE-MATCH
+function recordV6ProPrematchCandidates(candidates) {
+  const history = loadV6ProHistory();
+  const existing = new Set(history.map(x => x.id));
+  let added = 0;
+
+  for (const item of candidates || []) {
+    const match = item?.match;
+    if (!match) continue;
+
+    const raw = match.raw || match;
+    const fixtureId = Number(
+      raw?.fixture?.id ?? raw?.id
+    );
+
+    const date = raw?.fixture?.date || match.date;
+    const kickoff = Date.parse(date || "");
+    const status = String(
+      raw?.fixture?.status?.short || match.status || ""
+    ).toUpperCase();
+
+    if (!Number.isFinite(fixtureId) || fixtureId <= 0 ||
+        !Number.isFinite(kickoff) ||
+        kickoff <= Date.now() ||
+        !["NS", "SCHEDULED", "TIMED"].includes(status)) {
+      continue;
+    }
+
+    if (Number(match.expertData?.homePlayed) < 8 ||
+        Number(match.expertData?.awayPlayed) < 8) {
+      continue;
+    }
+
+    for (const option of item.aiMarketOptions || []) {
+      const market = String(option.label || "")
+        .replace(/^🎯\s*/, "").trim();
+
+      const probability = Number(option.value);
+      const confidence = Number(option.confidence);
+
+      if (!market.includes("+") ||
+          !Number.isFinite(probability) ||
+          probability < 50 || probability > 75 ||
+          !Number.isFinite(confidence) ||
+          confidence < 75) continue;
+
+      const id = `${fixtureId}|${market}`;
+      if (existing.has(id)) continue;
+
+      history.push({
+        id,
+        fixtureId,
+        date,
+        home: match.home,
+        away: match.away,
+        market,
+        probability,
+        confidence,
+        createdAt: new Date().toISOString(),
+        status: "pending",
+        result: null,
+        won: null
+      });
+
+      existing.add(id);
+      added++;
+    }
+  }
+
+  if (added > 0) {
+    saveV6ProHistory(history);
+  }
+}
 // Selezione strategia
 presetButtons.forEach((button) => {
   button.addEventListener("click", () => {

@@ -1260,7 +1260,44 @@ function getAiAgentMatchId(match) {
 }
 function selectAiAgentPicks(candidates) {
   if (!Array.isArray(candidates)) return [];
+  // V6 PRO - SINGOLA EXPERT QUOTA PIU' ALTA
+  if (aiAgentBetType === AI_AGENT_BET_TYPES.SINGLE) {
+    const picks = candidates
+      .filter(item =>
+        item?.match &&
+        Array.isArray(item.aiMarketOptions)
+      )
+      .filter(item =>
+        Number(item.match.expertData?.homePlayed) >= 8 &&
+        Number(item.match.expertData?.awayPlayed) >= 8
+      )
+      .flatMap(item =>
+        item.aiMarketOptions
+          .filter(option =>
+            String(option.label).includes("+") &&
+            Number(option.value) >= 50 &&
+            Number(option.value) <= 62 &&
+            Number(option.confidence) >= 75
+          )
+          .map(option => ({
+            match: item.match,
+            prediction: option,
+            aiScore: calculateAiAgentScore(
+              option, item.match
+            )
+          }))
+          .filter(pick => pick.aiScore >= 68)
+      )
+      .filter(item =>
+        aiAgentMode !== AI_AGENT_MODES.MANUAL ||
+        aiAgentManualSelections.includes(
+          getAiAgentMatchId(item.match)
+        )
+      )
+      .sort((a, b) => b.aiScore - a.aiScore);
 
+    return picks.slice(0, 1);
+  }
   const ranked = candidates
     .filter(item =>
       item &&

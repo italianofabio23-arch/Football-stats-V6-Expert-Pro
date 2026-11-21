@@ -1190,7 +1190,13 @@ matches = enrichedMatches;
 renderHighOddsV6Slip(matches) +
     
   matches.map(renderMatchCard).join("");
-  
+  // V6 PRO - CONTROLLO AUTOMATICO ESITI
+updateV6ProHistoryResults().catch(error => {
+  console.warn(
+    "V6 Pro - Aggiornamento storico non riuscito:",
+    error
+  );
+});
   // V6 STUDIO TV - Esportazione pronostici gol
   try {
     const studioMatches = matches.map(match => {

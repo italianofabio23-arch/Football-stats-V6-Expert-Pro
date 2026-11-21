@@ -166,6 +166,48 @@ function evaluateV6ProComboResult(
     rules, key
   ) ? rules[key] : null;
 }
+// ========================================
+// V6 PRO - RECUPERO RISULTATI REALI
+// ========================================
+
+async function fetchV6ProFixtureById(fixtureId) {
+  const id = Number(fixtureId);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    return null;
+  }
+
+  const url =
+    `${BACKEND}/api/football?path=%2Ffixtures&id=${id}`;
+
+  const response = await fetch(url, {
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Errore API risultati: ${response.status}`
+    );
+  }
+
+  const data = await response.json();
+
+  const errors = data.errors || [];
+
+  if (Object.keys(errors).length > 0) {
+    throw new Error(
+      "API-Football ha restituito un errore"
+    );
+  }
+
+  const fixtures = Array.isArray(data.response)
+    ? data.response
+    : [];
+
+  return fixtures.find(game =>
+    Number(game?.fixture?.id) === id
+  ) || null;
+}
 // Selezione strategia
 presetButtons.forEach((button) => {
   button.addEventListener("click", () => {

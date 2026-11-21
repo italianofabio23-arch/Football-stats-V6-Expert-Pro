@@ -1331,6 +1331,60 @@ function selectAiAgentPicks(candidates) {
 
     return picks.slice(0, 1);
   }
+    // V6 PRO - DOPPIA EXPERT SELETTIVA
+  if (aiAgentBetType === AI_AGENT_BET_TYPES.DOUBLE) {
+    const picks = candidates
+      .filter(item =>
+        item?.match &&
+        Array.isArray(item.aiMarketOptions)
+      )
+      .filter(item =>
+        Number(item.match.expertData?.homePlayed) >= 8 &&
+        Number(item.match.expertData?.awayPlayed) >= 8
+      )
+      .flatMap(item =>
+        item.aiMarketOptions
+          .filter(option =>
+            String(option.label).includes("+") &&
+            Number(option.value) >= 62 &&
+            Number(option.value) <= 75 &&
+            Number(option.confidence) >= 78
+          )
+          .map(option => ({
+            match: item.match,
+            prediction: option,
+            aiScore: calculateAiAgentScore(
+              option, item.match
+            )
+          }))
+          .filter(pick => pick.aiScore >= 72)
+      )
+      .filter(item =>
+        aiAgentMode !== AI_AGENT_MODES.MANUAL ||
+        aiAgentManualSelections.includes(
+          getAiAgentMatchId(item.match)
+        )
+      )
+      .sort((a, b) =>
+        b.aiScore - a.aiScore
+      );
+
+    const selected = [];
+    const usedMatches = new Set();
+
+    for (const pick of picks) {
+      const id = getAiAgentMatchId(pick.match);
+
+      if (usedMatches.has(id)) continue;
+
+      selected.push(pick);
+      usedMatches.add(id);
+
+      if (selected.length === 2) break;
+    }
+
+    return selected.length === 2 ? selected : [];
+  }
   const ranked = candidates
     .filter(item =>
       item &&

@@ -464,7 +464,31 @@ function renderV6ProReliabilityPanel() {
                 ' | ID ' + item.fixtureId +
                 ': ' + status +
                 ' (' + goals + ')';
+              // Diagnosi mercato e storico V6 Pro
+              const saved = loadV6ProHistory()
+                .filter(x =>
+                  Number(x.fixtureId) ===
+                  Number(item.fixtureId)
+                );
 
+              const first = saved[0];
+
+              const verdict =
+                first && status === 'FT'
+                  ? evaluateV6ProComboResult(
+                      first.market,
+                      game.goals?.home,
+                      game.goals?.away
+                    )
+                  : null;
+
+              out.textContent +=
+                ' | Mercati: ' + saved.length +
+                ' | Mercato: ' +
+                String(first?.market || 'NESSUNO') +
+                ' | Valutazione: ' + String(verdict) +
+                ' | Stato storico: ' +
+                String(first?.status || 'ASSENTE');
             } catch (error) {
               out.textContent +=
                 ' | ID ' + item.fixtureId +

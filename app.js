@@ -549,58 +549,93 @@ function renderV6ProReliabilityPanel() {
           💾 SCARICA BACKUP STORICO
         </button>
       </div>
-                  <div class="market-box">
+                       <div class="market-box">
         <button type="button" onclick="(async (btn) => {
           const out = btn.nextElementSibling;
-          const history = loadV6ProHistory();
-
-          if (!history.length) {
-            out.textContent = 'Nessuno storico disponibile.';
-            return;
-          }
-
-          const data = JSON.stringify({
-            format: 'v6-pro-history-v1',
-            exportedAt: new Date().toISOString(),
-            history
-          }, null, 2);
-
-          const area = document.createElement('textarea');
-          area.value = data;
-          area.readOnly = true;
-          area.rows = 5;
-          area.style.width = '100%';
-
-          out.replaceChildren(area);
-
-          let copied = false;
 
           try {
-            await navigator.clipboard.writeText(data);
-            copied = true;
-          } catch (error) {
-            area.focus();
-            area.select();
+            const history = loadV6ProHistory();
+
+            if (!history.length) {
+              out.textContent = 'Storico vuoto.';
+              return;
+            }
+
+            if (typeof CompressionStream !== 'function') {
+              out.textContent =
+                'Compressione non supportata.';
+              return;
+            }
+
+            const data = JSON.stringify({
+              format: 'v6-pro-history-v1',
+              exportedAt: new Date().toISOString(),
+              history
+            });
+
+            const stream = new Blob([data])
+              .stream()
+              .pipeThrough(new CompressionStream('gzip'));
+
+            const bytes = new Uint8Array(
+              await new Response(stream).arrayBuffer()
+            );
+
+            let binary = '';
+
+            for (let i = 0; i < bytes.length; i += 4096) {
+              binary += String.fromCharCode(
+                ...bytes.subarray(i, i + 4096)
+              );
+            }
+
+            const backup =
+              'V6PRO-GZIP-1|' +
+              history.length + '|' +
+              btoa(binary) + '|FINE';
+
+            const area = document.createElement('textarea');
+            area.value = backup;
+            area.readOnly = true;
+            area.rows = 4;
+            area.style.width = '100%';
+
+            out.replaceChildren(area);
+
+            let copied = false;
 
             try {
-              copied = document.execCommand('copy');
-            } catch (e) {}
+              await navigator.clipboard.writeText(backup);
+              copied = true;
+            } catch (error) {
+              area.focus();
+              area.select();
+
+              try {
+                copied = document.execCommand('copy');
+              } catch (e) {}
+            }
+
+            const message = document.createElement('div');
+
+            message.textContent = copied
+              ? '✅ Backup compresso copiato: ' +
+                history.length + ' mercati.'
+              : 'Seleziona e copia il testo compresso.';
+
+            out.prepend(message);
+
+          } catch (error) {
+            out.textContent =
+              'Errore compressione: ' + error.message;
           }
-
-          const message = document.createElement('div');
-          message.textContent = copied
-            ? '✅ Backup copiato: ' + history.length +
-              ' mercati. Incollalo e salvalo in una nota.'
-            : '⚠️ Copia manualmente il testo qui sotto e salvalo.';
-
-          out.prepend(message);
         })(this)">
-          📋 COPIA BACKUP STORICO
+          📋 COPIA BACKUP COMPRESSO
         </button>
-        <div style="margin-top:10px;overflow-wrap:anywhere;">
-          Copia lo storico e conservalo fuori dal browser.
+        <div style="margin-top:10px;">
+          Backup completo in formato GZIP Base64.
         </div>
-      </div>
+      </div> 
         <div class="market-box">
         <button type="button" onclick="(async (btn) => {
           const out = btn.nextElementSibling;

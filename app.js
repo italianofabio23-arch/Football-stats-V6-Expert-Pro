@@ -510,6 +510,45 @@ function renderV6ProReliabilityPanel() {
         ⏳ Mercati in attesa: ${pending.length}
         <div>Partite in attesa: ${pendingFixtures}</div>
       </div>
+            <div class="market-box">
+        <button type="button" onclick="
+          (() => {
+            const history = loadV6ProHistory();
+
+            if (!history.length) {
+              alert('Nessuno storico da salvare.');
+              return;
+            }
+
+            const data = JSON.stringify({
+              format: 'v6-pro-history-v1',
+              exportedAt: new Date().toISOString(),
+              history: history
+            }, null, 2);
+
+            const blob = new Blob([data], {
+              type: 'application/json'
+            });
+
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+
+            link.href = url;
+            link.download =
+              'v6-pro-storico-' +
+              new Date().toISOString().slice(0, 10) +
+              '.json';
+
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            setTimeout(() => URL.revokeObjectURL(url), 2000);
+          })();
+        ">
+          💾 SCARICA BACKUP STORICO
+        </button>
+      </div>
         <div class="market-box">
         <button type="button" onclick="(async (btn) => {
           const out = btn.nextElementSibling;

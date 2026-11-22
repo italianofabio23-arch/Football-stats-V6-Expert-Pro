@@ -4880,3 +4880,27 @@ awayPoints: awayTotalRow?.points ?? null,
   )
 };
 }
+
+// ==========================================
+// V6 PRO - VERIFICA ESITI ALL'APERTURA
+// ==========================================
+
+window.addEventListener("load", () => {
+  updateV6ProHistoryResults()
+    .then(() => {
+      const panel = document.getElementById(
+        "v6-pro-reliability-panel"
+      );
+
+      if (panel) {
+        panel.outerHTML =
+          renderV6ProReliabilityPanel();
+      }
+    })
+    .catch(error => {
+      console.warn(
+        "V6 Pro - Verifica iniziale:",
+        error
+      );
+    });
+});

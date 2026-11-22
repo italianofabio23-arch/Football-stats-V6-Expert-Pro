@@ -3789,7 +3789,67 @@ function getSelectedLeagueNames() {
 }
 
 // Scarica le partite di una singola data
+// V6 PRO - CACHE PARTITE 10 MINUTI
 async function fetchFixturesByDate(date) {
+  const cacheKey = `v6_pro_fixtures_${date}`;
+
+  try {
+    const cached = JSON.parse(
+      sessionStorage.getItem(cacheKey) || "null"
+    );
+
+    if (
+      cached &&
+      Date.now() - cached.savedAt < 600000 &&
+      Array.isArray(cached.fixtures)
+    ) {
+      return cached.fixtures;
+    }
+  } catch (error) {
+    console.warn("Cache partite non disponibile", error);
+  }
+
+  const url =
+    `${BACKEND}/api/football?path=/fixtures&date=${date}`;
+
+  const response = await fetch(url, {
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Errore API ${response.status} per ${date}`
+    );
+  }
+
+  const data = await response.json();
+
+  if (data.errors &&
+      Object.keys(data.errors).length > 0) {
+    throw new Error(
+      "API-Football: " +
+      JSON.stringify(data.errors).slice(0, 200)
+    );
+  }
+
+  const fixtures = Array.isArray(data.response)
+    ? data.response
+    : [];
+
+  try {
+    sessionStorage.setItem(
+      cacheKey,
+      JSON.stringify({
+        savedAt: Date.now(),
+        fixtures
+      })
+    );
+  } catch (error) {
+    console.warn("Salvataggio cache non riuscito", error);
+  }
+
+  return fixtures;
+}
   const url =
 `${BACKEND}/api/football?path=/fixtures&date=${date}`;
 

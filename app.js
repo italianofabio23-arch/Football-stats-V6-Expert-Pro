@@ -253,7 +253,23 @@ async function updateV6ProHistoryResults() {
     )];
 
     if (!ids.length) return;
+    // V6 PRO - RISPARMIO CHIAMATE RISULTATI
+    const lastCheckKey =
+      "v6_pro_history_last_check_v1";
 
+    const lastCheck = Number(
+      localStorage.getItem(lastCheckKey)
+    ) || 0;
+
+    // Massimo una verifica automatica ogni 60 minuti
+    if (Date.now() - lastCheck < 60 * 60 * 1000) {
+      return;
+    }
+
+    localStorage.setItem(
+      lastCheckKey,
+      String(Date.now())
+    );
     // Non ricontrolla sempre le stesse partite
     const cursorKey = "v6_pro_check_cursor_v1";
 

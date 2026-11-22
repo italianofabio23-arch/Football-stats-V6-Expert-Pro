@@ -3260,6 +3260,7 @@ async function fetchScorerFixturePlayers(fixtureId) {
 }
 
 // Ultimi scontri diretti fra le due squadre
+// V6 PRO - CACHE SCONTRI DIRETTI 6 ORE
 async function fetchScorerHeadToHead(
   homeTeamId,
   awayTeamId,
@@ -3269,8 +3270,10 @@ async function fetchScorerHeadToHead(
   const awayId = Number(awayTeamId);
 
   if (
-    !Number.isFinite(homeId) ||
-    !Number.isFinite(awayId)
+    !Number.isInteger(homeId) ||
+    !Number.isInteger(awayId) ||
+    homeId <= 0 ||
+    awayId <= 0
   ) {
     return [];
   }
@@ -3280,6 +3283,30 @@ async function fetchScorerHeadToHead(
 
   if (scorerH2HCache.has(cacheKey)) {
     return scorerH2HCache.get(cacheKey);
+  }
+
+  const storageKey = `v6_pro_h2h_${cacheKey}`;
+
+  try {
+    const cached = JSON.parse(
+      sessionStorage.getItem(storageKey) || "null"
+    );
+
+    if (
+      cached &&
+      Date.now() - cached.savedAt < 21600000 &&
+      Array.isArray(cached.fixtures) &&
+      cached.fixtures.length > 0
+    ) {
+      scorerH2HCache.set(
+        cacheKey,
+        cached.fixtures
+      );
+
+      return cached.fixtures;
+    }
+  } catch (error) {
+    console.warn("Cache H2H non disponibile", error);
   }
 
   try {
@@ -3298,11 +3325,33 @@ async function fetchScorerHeadToHead(
 
     const data = await response.json();
 
+    if (
+      data.errors &&
+      Object.keys(data.errors).length > 0
+    ) {
+      console.warn("Errore API H2H", data.errors);
+      return [];
+    }
+
     const fixtures = Array.isArray(data.response)
       ? data.response
       : [];
 
-    scorerH2HCache.set(cacheKey, fixtures);
+    if (fixtures.length > 0) {
+      scorerH2HCache.set(cacheKey, fixtures);
+
+      try {
+        sessionStorage.setItem(
+          storageKey,
+          JSON.stringify({
+            savedAt: Date.now(),
+            fixtures
+          })
+        );
+      } catch (error) {
+        console.warn("Cache H2H piena", error);
+      }
+    }
 
     return fixtures;
 
@@ -3316,7 +3365,7 @@ async function fetchScorerHeadToHead(
 
     return [];
   }
-  }
+    }
 // ==========================================
 // V6 - MOTORE POSSIBILE MARCATORE
 // ==========================================

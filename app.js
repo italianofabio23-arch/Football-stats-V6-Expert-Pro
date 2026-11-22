@@ -194,11 +194,12 @@ async function fetchV6ProFixtureById(fixtureId) {
 
   const errors = data.errors || [];
 
-  if (Object.keys(errors).length > 0) {
-    throw new Error(
-      "API-Football ha restituito un errore"
-    );
-  }
+if (Object.keys(errors).length > 0) {
+  throw new Error(
+    "API-Football: " +
+    JSON.stringify(errors).slice(0, 350)
+  );
+}
 
   const fixtures = Array.isArray(data.response)
     ? data.response

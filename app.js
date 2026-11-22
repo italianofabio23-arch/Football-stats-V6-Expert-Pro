@@ -549,6 +549,74 @@ function renderV6ProReliabilityPanel() {
           💾 SCARICA BACKUP STORICO
         </button>
       </div>
+            <div class="market-box">
+        <button type="button" onclick="(async (btn) => {
+          const out = btn.nextElementSibling;
+
+          try {
+            const history = loadV6ProHistory();
+
+            if (!history.length) {
+              out.textContent = 'Nessuno storico disponibile.';
+              return;
+            }
+
+            const data = JSON.stringify({
+              format: 'v6-pro-history-v1',
+              exportedAt: new Date().toISOString(),
+              history
+            }, null, 2);
+
+            const baseName =
+              'v6-pro-storico-' +
+              new Date().toISOString().slice(0, 10);
+
+            const jsonFile = new File(
+              [data],
+              baseName + '.json',
+              { type: 'application/json' }
+            );
+
+            const textFile = new File(
+              [data],
+              baseName + '.txt',
+              { type: 'text/plain' }
+            );
+
+            const file = navigator.canShare?.({
+              files: [jsonFile]
+            }) ? jsonFile : textFile;
+
+            if (!navigator.canShare?.({
+              files: [file]
+            })) {
+              out.textContent =
+                'Condivisione file non supportata da questo browser.';
+              return;
+            }
+
+            await navigator.share({
+              files: [file],
+              title: 'Backup storico V6 Pro'
+            });
+
+            out.textContent =
+              '✅ Backup condiviso: ' +
+              history.length + ' mercati.';
+
+          } catch (error) {
+            if (error.name !== 'AbortError') {
+              out.textContent =
+                'Errore backup: ' + error.message;
+            }
+          }
+        })(this)">
+          📤 SALVA BACKUP CON ANDROID
+        </button>
+        <div style="margin-top:10px;">
+          Condividi il backup con Drive o un'app file.
+        </div>
+      </div>
         <div class="market-box">
         <button type="button" onclick="(async (btn) => {
           const out = btn.nextElementSibling;

@@ -358,12 +358,27 @@ async function updateV6ProHistoryResults() {
           );
         }
 
-      } catch (error) {
+          } catch (error) {
         console.warn(
           "V6 Pro - Verifica non riuscita:",
           fixtureId,
           error
         );
+
+        if (/ratelimit|too many requests|429/i.test(
+          String(error?.message || "")
+        )) {
+          localStorage.setItem(
+            "v6_pro_api_pause_until",
+            String(Date.now() + 60 * 60 * 1000)
+          );
+
+          console.warn(
+            "Limite API: verifica sospesa per 60 minuti"
+          );
+
+          break;
+        }
       }
     }
 

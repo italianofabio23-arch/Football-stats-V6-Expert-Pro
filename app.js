@@ -218,7 +218,17 @@ let v6ProHistoryCheckRunning = false;
 
 async function updateV6ProHistoryResults() {
   if (v6ProHistoryCheckRunning) return;
+  // Protezione limite richieste API
+  const pauseUntil = Number(
+    localStorage.getItem("v6_pro_api_pause_until")
+  ) || 0;
 
+  if (Date.now() < pauseUntil) {
+    console.warn(
+      "V6 Pro: verifica sospesa per limite API"
+    );
+    return;
+  }
   v6ProHistoryCheckRunning = true;
 
   try {

@@ -3071,11 +3071,12 @@ async function fetchScorerSeasonPlayers(teamId, season) {
   }
 }
 // Ultime partite concluse di una squadra
+// V6 PRO - CACHE ULTIME PARTITE 60 MINUTI
 async function fetchScorerRecentFixtures(teamId, last = 5) {
   const id = Number(teamId);
   const limit = Math.max(1, Math.min(10, Number(last) || 5));
 
-  if (!Number.isFinite(id) || id <= 0) {
+  if (!Number.isInteger(id) || id <= 0) {
     return [];
   }
 
@@ -3083,6 +3084,30 @@ async function fetchScorerRecentFixtures(teamId, last = 5) {
 
   if (scorerRecentFixturesCache.has(cacheKey)) {
     return scorerRecentFixturesCache.get(cacheKey);
+  }
+
+  const storageKey = `v6_pro_recent_${cacheKey}`;
+
+  try {
+    const cached = JSON.parse(
+      sessionStorage.getItem(storageKey) || "null"
+    );
+
+    if (
+      cached &&
+      Date.now() - cached.savedAt < 3600000 &&
+      Array.isArray(cached.fixtures) &&
+      cached.fixtures.length > 0
+    ) {
+      scorerRecentFixturesCache.set(
+        cacheKey,
+        cached.fixtures
+      );
+
+      return cached.fixtures;
+    }
+  } catch (error) {
+    console.warn("Cache ultime partite non disponibile", error);
   }
 
   try {
@@ -3100,11 +3125,33 @@ async function fetchScorerRecentFixtures(teamId, last = 5) {
 
     const data = await response.json();
 
+    if (
+      data.errors &&
+      Object.keys(data.errors).length > 0
+    ) {
+      console.warn("Errore API ultime partite", data.errors);
+      return [];
+    }
+
     const fixtures = Array.isArray(data.response)
       ? data.response
       : [];
 
-    scorerRecentFixturesCache.set(cacheKey, fixtures);
+    if (fixtures.length > 0) {
+      scorerRecentFixturesCache.set(cacheKey, fixtures);
+
+      try {
+        sessionStorage.setItem(
+          storageKey,
+          JSON.stringify({
+            savedAt: Date.now(),
+            fixtures
+          })
+        );
+      } catch (error) {
+        console.warn("Cache ultime partite piena", error);
+      }
+    }
 
     return fixtures;
 

@@ -3120,15 +3120,40 @@ async function fetchScorerRecentFixtures(teamId, last = 5) {
 }
 
 // Statistiche giocatori di una singola partita
+// V6 PRO - CACHE STATISTICHE MARCATORI 24 ORE
 async function fetchScorerFixturePlayers(fixtureId) {
   const id = Number(fixtureId);
 
-  if (!Number.isFinite(id) || id <= 0) {
+  if (!Number.isInteger(id) || id <= 0) {
     return [];
   }
 
   if (scorerFixturePlayersCache.has(id)) {
     return scorerFixturePlayersCache.get(id);
+  }
+
+  const cacheKey = `v6_pro_players_${id}`;
+
+  try {
+    const cached = JSON.parse(
+      sessionStorage.getItem(cacheKey) || "null"
+    );
+
+    if (
+      cached &&
+      Date.now() - cached.savedAt < 86400000 &&
+      Array.isArray(cached.players) &&
+      cached.players.length > 0
+    ) {
+      scorerFixturePlayersCache.set(
+        id,
+        cached.players
+      );
+
+      return cached.players;
+    }
+  } catch (error) {
+    console.warn("Cache marcatori non disponibile", error);
   }
 
   try {
@@ -3146,11 +3171,33 @@ async function fetchScorerFixturePlayers(fixtureId) {
 
     const data = await response.json();
 
+    if (
+      data.errors &&
+      Object.keys(data.errors).length > 0
+    ) {
+      console.warn("Errore API marcatori", data.errors);
+      return [];
+    }
+
     const players = Array.isArray(data.response)
       ? data.response
       : [];
 
-    scorerFixturePlayersCache.set(id, players);
+    if (players.length > 0) {
+      scorerFixturePlayersCache.set(id, players);
+
+      try {
+        sessionStorage.setItem(
+          cacheKey,
+          JSON.stringify({
+            savedAt: Date.now(),
+            players
+          })
+        );
+      } catch (error) {
+        console.warn("Cache marcatori piena", error);
+      }
+    }
 
     return players;
 

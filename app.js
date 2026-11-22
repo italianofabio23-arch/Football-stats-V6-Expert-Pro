@@ -3850,26 +3850,7 @@ async function fetchFixturesByDate(date) {
 
   return fixtures;
 }
-  const url =
-`${BACKEND}/api/football?path=/fixtures&date=${date}`;
-
-  const response = await fetch(url, {
-    cache: "no-store"
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      `Errore API ${response.status} per ${date}`
-    );
-  }
-
-  const data = await response.json();
-
-  return Array.isArray(data.response)
-  ? data.response
-  : [];
-}
-
+  
 // Scarica tutte le partite della finestra selezionata
 async function fetchAllFixtures() {
   const dates = getSearchDates();

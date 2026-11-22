@@ -410,7 +410,77 @@ function renderV6ProReliabilityPanel() {
         ⏳ Mercati in attesa: ${pending.length}
         <div>Partite in attesa: ${pendingFixtures}</div>
       </div>
+        <div class="market-box">
+        <button type="button" onclick="(async (btn) => {
+          const out = btn.nextElementSibling;
+          const due = loadV6ProHistory()
+            .filter(x => {
+              const time = Date.parse(x.date || '');
+              return x.status === 'pending' &&
+                Number(x.fixtureId) > 0 &&
+                Number.isFinite(time) &&
+                Date.now() >= time + 10800000;
+            });
 
+          const unique = [...new Map(
+            due.map(x => [Number(x.fixtureId), x])
+          ).values()].sort((a, b) =>
+            Date.parse(a.date) - Date.parse(b.date)
+          );
+
+          out.textContent =
+            'Partite da controllare: ' + unique.length;
+
+          if (!unique.length) return;
+
+          const samples = [
+            unique[0],
+            unique[Math.floor(unique.length / 2)],
+            unique[unique.length - 1]
+          ].filter((x, i, arr) =>
+            arr.findIndex(y =>
+              y.fixtureId === x.fixtureId
+            ) === i
+          );
+
+          btn.disabled = true;
+
+          for (const item of samples) {
+            try {
+              const game = await fetchV6ProFixtureById(
+                item.fixtureId
+              );
+
+              const status =
+                game?.fixture?.status?.short || 'ASSENTE';
+
+              const goals = game
+                ? String(game.goals?.home ?? '?') +
+                  '-' +
+                  String(game.goals?.away ?? '?')
+                : 'N/D';
+
+              out.textContent +=
+                ' | ID ' + item.fixtureId +
+                ': ' + status +
+                ' (' + goals + ')';
+
+            } catch (error) {
+              out.textContent +=
+                ' | ID ' + item.fixtureId +
+                ': ERRORE ' + error.message;
+            }
+          }
+
+          btn.disabled = false;
+        })(this)">
+          🧪 TEST API RISULTATI V6 PRO
+        </button>
+
+        <div style="margin-top:10px;overflow-wrap:anywhere;">
+          Premi per verificare i risultati.
+        </div>
+      </div>
       ${rows || `
         <div class="market-box">
           Storico reale ancora insufficiente.

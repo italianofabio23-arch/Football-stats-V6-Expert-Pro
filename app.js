@@ -213,12 +213,18 @@ if (Object.keys(errors).length > 0) {
 // V6 PRO - AGGIORNAMENTO ESITI REALI
 // ========================================
 
-async function updateV6ProHistoryResults() {
-  const history = loadV6ProHistory();
-  const now = Date.now();
+// V6 PRO - AGGIORNAMENTO STORICO PROGRESSIVO
+let v6ProHistoryCheckRunning = false;
 
-  const pendingIds = [...new Set(
-    history
+async function updateV6ProHistoryResults() {
+  if (v6ProHistoryCheckRunning) return;
+
+  v6ProHistoryCheckRunning = true;
+
+  try {
+    const now = Date.now();
+
+    const due = loadV6ProHistory()
       .filter(item => {
         const kickoff = Date.parse(item.date || "");
         const id = Number(item.fixtureId);
@@ -226,81 +232,133 @@ async function updateV6ProHistoryResults() {
         return item.status === "pending" &&
           Number.isInteger(id) && id > 0 &&
           Number.isFinite(kickoff) &&
-          now >= kickoff + 3 * 60 * 60 * 1000;
+          now >= kickoff + 10800000;
       })
       .sort((a, b) =>
         Date.parse(a.date) - Date.parse(b.date)
-      )
-      .map(item => Number(item.fixtureId))
-  )].slice(0, 12);
-
-  let changed = false;
-
-  for (const fixtureId of pendingIds) {
-    try {
-      const fixture = await fetchV6ProFixtureById(
-        fixtureId
       );
 
-      if (!fixture) continue;
+    const ids = [...new Set(
+      due.map(item => Number(item.fixtureId))
+    )];
 
-      // Solo risultati finali nei 90 minuti
-      if (fixture.fixture?.status?.short !== "FT") {
-        continue;
-      }
+    if (!ids.length) return;
 
-      const rawHome = fixture.goals?.home;
-      const rawAway = fixture.goals?.away;
+    // Non ricontrolla sempre le stesse partite
+    const cursorKey = "v6_pro_check_cursor_v1";
 
-      if (rawHome == null || rawAway == null) {
-        continue;
-      }
+    const cursor = Math.max(
+      0,
+      Number(localStorage.getItem(cursorKey)) || 0
+    ) % ids.length;
 
-      const homeGoals = Number(rawHome);
-      const awayGoals = Number(rawAway);
+    const batch = [];
 
-      if (!Number.isInteger(homeGoals) ||
-          !Number.isInteger(awayGoals) ||
-          homeGoals < 0 || awayGoals < 0) {
-        continue;
-      }
+    for (let i = 0; i < Math.min(3, ids.length); i++) {
+      batch.push(ids[(cursor + i) % ids.length]);
+    }
 
-      for (const item of history) {
-        if (Number(item.fixtureId) !== fixtureId ||
-            item.status !== "pending") {
+    localStorage.setItem(
+      cursorKey,
+      String((cursor + batch.length) % ids.length)
+    );
+
+    for (const fixtureId of batch) {
+      try {
+        const fixture = await fetchV6ProFixtureById(
+          fixtureId
+        );
+
+        if (
+          String(
+            fixture?.fixture?.status?.short || ""
+          ).toUpperCase() !== "FT"
+        ) {
           continue;
         }
 
-        const won = evaluateV6ProComboResult(
-          item.market,
-          homeGoals,
-          awayGoals
+        const h = fixture.goals?.home;
+        const a = fixture.goals?.away;
+
+        if (h == null || a == null) continue;
+
+        const homeGoals = Number(h);
+        const awayGoals = Number(a);
+
+        if (
+          !Number.isInteger(homeGoals) ||
+          !Number.isInteger(awayGoals) ||
+          homeGoals < 0 ||
+          awayGoals < 0
+        ) {
+          continue;
+        }
+
+        // Rilegge lo storico prima di ogni salvataggio
+        const history = loadV6ProHistory();
+        let updated = 0;
+
+        for (const item of history) {
+          if (
+            Number(item.fixtureId) !== fixtureId ||
+            item.status !== "pending"
+          ) {
+            continue;
+          }
+
+          const kickoff = Date.parse(item.date || "");
+          const created = Date.parse(item.createdAt || "");
+
+          // Accetta soltanto pronostici pre-match
+          if (
+            !Number.isFinite(kickoff) ||
+            !Number.isFinite(created) ||
+            created >= kickoff
+          ) {
+            continue;
+          }
+
+          const won = evaluateV6ProComboResult(
+            item.market,
+            homeGoals,
+            awayGoals
+          );
+
+          if (typeof won !== "boolean") continue;
+
+          item.won = won;
+          item.result = {
+            home: homeGoals,
+            away: awayGoals
+          };
+          item.status = "settled";
+          item.settledAt = new Date().toISOString();
+
+          updated++;
+        }
+
+        // Salva immediatamente ogni partita verificata
+        if (updated > 0) {
+          saveV6ProHistory(history);
+
+          console.log(
+            "V6 Pro - Esiti salvati:",
+            fixtureId,
+            updated
+          );
+        }
+
+      } catch (error) {
+        console.warn(
+          "V6 Pro - Verifica non riuscita:",
+          fixtureId,
+          error
         );
-
-        if (won === null) continue;
-
-        item.won = won;
-        item.result = {
-          home: homeGoals,
-          away: awayGoals
-        };
-        item.status = "settled";
-        item.settledAt = new Date().toISOString();
-
-        changed = true;
       }
-
-    } catch (error) {
-      console.warn(
-        "V6 Pro - Errore verifica risultato",
-        fixtureId,
-        error
-      );
     }
-  }
 
-  if (changed) {
-    saveV6ProHistory(history);
+  } finally {
+    v6ProHistoryCheckRunning = false;
   }
 }
 // ========================================
